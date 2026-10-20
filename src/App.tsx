@@ -13,7 +13,9 @@ import {
   Layers,
   Cpu,
   Laptop,
-  Zap
+  Zap,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { HoloOrb, OrbPhase } from './components/HoloOrb';
 import { AIKeyboardBar } from './components/AIKeyboardBar';
@@ -32,10 +34,13 @@ import { JarvisTelemetryHUD, TelemetryNoteItem } from './components/JarvisTeleme
 import { onDeviceAI, DualLaneAnalysisResult } from './lib/onDeviceAI';
 import { auth, testFirestoreConnection } from './lib/firebase';
 import { User } from 'firebase/auth';
+import { omniVoice } from './lib/omniVoice';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'workspace' | 'extension' | 'studios' | 'sync' | 'setup'>('keyboard');
   const [isDesktopOverlayActive, setIsDesktopOverlayActive] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(omniVoice.getVoiceEnabled());
+  const typingTimerRef = useRef<any>(null);
 
   // Autonomous Auto Mode State
   const [isAutoMode, setIsAutoMode] = useState(false);
@@ -147,6 +152,26 @@ export default function App() {
       clearInterval(interval);
       unsub();
     };
+  }, []);
+
+  // Sync OmniVoice with HoloOrb kinetic phases
+  useEffect(() => {
+    const unsubVoice = omniVoice.subscribe((state) => {
+      if (state === 'speaking') {
+        setOrbPhase('talking');
+      } else if (state === 'idle') {
+        setOrbPhase((prev) => (prev === 'talking' ? 'idle' : prev));
+      }
+    });
+    return unsubVoice;
+  }, []);
+
+  const triggerTypingState = useCallback(() => {
+    setOrbPhase('texting');
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      setOrbPhase('idle');
+    }, 1400);
   }, []);
 
   // Helper to capture a frame from the live video stream if active
@@ -289,15 +314,17 @@ export default function App() {
   // Keyboard soft touch interactions
   const handleKeyPress = (char: string) => {
     setCurrentDraftText((prev) => prev + char);
-    setOrbPhase('typing');
+    triggerTypingState();
   };
 
   const handleBackspace = () => {
     setCurrentDraftText((prev) => prev.slice(0, -1));
+    triggerTypingState();
   };
 
   const handleSpace = () => {
     setCurrentDraftText((prev) => prev + ' ');
+    triggerTypingState();
   };
 
   const handleEnter = useCallback((text?: string, isAutoPilot = false) => {
@@ -348,7 +375,12 @@ export default function App() {
           // Autonomously answer!
           handleEnter(chosenReply, true);
 
-          // Add audit note to Jarvis Telemetry
+          // If OmniVoice is active, speak out the autonomous reply
+          if (omniVoice.getVoiceEnabled()) {
+            omniVoice.speak(chosenReply);
+          }
+
+          // Add audit note to OmniCore Telemetry
           const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           setAnalysisData((prev) => ({
             ...prev,
@@ -517,7 +549,7 @@ export default function App() {
         <div className="flex flex-col text-left">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-[#00f2fe] animate-pulse shadow-[0_0_8px_#00f2fe]" />
-            <span className="font-bold text-white tracking-wider text-xs">OMNI KEY</span>
+            <span className="font-bold text-white tracking-wider text-xs">OmniAI - Your Shadow Companion</span>
             <span className="px-1.5 py-0.5 rounded text-[8px] bg-[#00f2fe]/10 border border-[#00f2fe]/30 text-[#00f2fe]">
               PC Sync (⌘⇧K)
             </span>
@@ -535,7 +567,7 @@ export default function App() {
                 ? 'bg-[#00f2fe] text-black border-[#00f2fe] font-bold shadow-[0_0_12px_rgba(0,242,254,0.4)]'
                 : 'bg-[#0B0B0C] border-white/10 hover:border-[#00f2fe]/40 text-slate-300 hover:text-white'
             }`}
-            title="Launch Floating Laptop Co-Pilot Overlay (⌘+Shift+K)"
+            title="Launch Floating Desktop Companion Overlay (⌘+Shift+K)"
           >
             <Laptop className="w-3.5 h-3.5" />
             <span>{isDesktopOverlayActive ? 'Dock Active' : 'PC Overlay'}</span>
@@ -583,17 +615,37 @@ export default function App() {
             <div className="flex flex-col text-left">
               <div className="flex items-center gap-1.5 leading-none">
                 <h1 className="text-xs font-bold tracking-wider font-mono text-white">
-                  OMNI <span className="text-[#00f2fe]">KEY</span>
+                  OMNI <span className="text-[#00f2fe]">AI</span>
                 </h1>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-ping" />
               </div>
               <span className="text-[8.5px] font-mono tracking-wider text-slate-400 mt-0.5">
-                Dark Misfit Studios
+                Your Shadow Companion • Dark Misfit Studios
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Quick Voice Toggle */}
+            <button
+              onClick={() => {
+                const next = omniVoice.toggleVoice();
+                setIsVoiceEnabled(next);
+                if (next) {
+                  omniVoice.speak('Omni voice link active.');
+                }
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition ${
+                isVoiceEnabled
+                  ? 'bg-[#00f2fe]/15 border border-[#00f2fe]/40 text-[#00f2fe] shadow-[0_0_10px_rgba(0,242,254,0.3)]'
+                  : 'bg-[#0B0B0C] border border-white/10 text-slate-500 hover:text-white'
+              }`}
+              title={isVoiceEnabled ? 'OmniVoice Active (Click to mute)' : 'OmniVoice Muted (Click to enable)'}
+            >
+              {isVoiceEnabled ? <Volume2 className="w-3 h-3 text-[#00f2fe] animate-pulse" /> : <VolumeX className="w-3 h-3 text-slate-500" />}
+              <span>{isVoiceEnabled ? 'VOICE' : 'MUTE'}</span>
+            </button>
+
             {/* Quick Auto Mode Toggle */}
             <button
               onClick={handleToggleAutoMode}
@@ -602,7 +654,7 @@ export default function App() {
                   ? 'bg-gradient-to-r from-[#00f2fe]/20 to-[#7f00ff]/30 border border-[#00f2fe] text-[#00f2fe] shadow-[0_0_12px_rgba(0,242,254,0.4)] animate-pulse'
                   : 'bg-[#0B0B0C] border border-white/10 text-slate-400 hover:text-white'
               }`}
-              title="Toggle Autonomous Auto-Pilot Mode (Omni Key answers for you)"
+              title="Toggle Autonomous Auto-Pilot Mode (Omni answers for you)"
             >
               <Zap className={`w-3 h-3 ${isAutoMode ? 'text-[#00f2fe] animate-bounce' : 'text-slate-500'}`} />
               <span>{isAutoMode ? 'AUTO: ON' : 'AUTO'}</span>
@@ -612,20 +664,20 @@ export default function App() {
             <button
               onClick={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#7f00ff]/15 border border-[#7f00ff]/40 text-[#c084fc] hover:bg-[#7f00ff]/25 transition"
-              title="Launch Floating Laptop Co-Pilot Overlay"
+              title="Launch Floating Desktop Companion Overlay"
             >
               <Laptop className="w-3 h-3" />
               <span>PC</span>
             </button>
 
-            {/* Quick HUD Button */}
+            {/* Quick OmniCore HUD Button */}
             <button
               onClick={() => setIsTelemetryHUDOpen(!isTelemetryHUDOpen)}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#00f2fe]/10 border border-[#00f2fe]/40 text-[#00f2fe] shadow-[0_0_10px_rgba(0,242,254,0.2)] hover:bg-[#00f2fe]/20 transition"
-              title="Toggle Jarvis Telemetry HUD"
+              title="Toggle OmniCore Telemetry HUD"
             >
               <Activity className="w-3 h-3" />
-              <span>HUD</span>
+              <span>OmniCore</span>
             </button>
 
             <PWAInstallButton variant="compact" />
@@ -842,9 +894,10 @@ export default function App() {
                 ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
                 : 'text-slate-500 hover:text-slate-300'
             }`}
+            title="OmniAI - Your Shadow Companion"
           >
             <Sparkles className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px] font-mono">Orb & 3D</span>
+            <span className="text-[9px] font-mono">OmniAI</span>
           </button>
 
           <button

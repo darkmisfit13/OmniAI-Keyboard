@@ -29,7 +29,7 @@ export const MobileSetupGuide: React.FC<MobileSetupGuideProps> = ({ onTestKeyboa
             <Smartphone className="w-6 h-6 text-[#00f2fe]" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white tracking-wide">SYSTEM CO-PILOT DEPLOYMENT</h2>
+            <h2 className="text-sm font-bold text-white tracking-wide">OMNIAI SHADOW COMPANION DEPLOYMENT</h2>
             <p className="text-[10px] text-slate-400">Install as standalone native mobile app (PWA)</p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export const MobileSetupGuide: React.FC<MobileSetupGuideProps> = ({ onTestKeyboa
               <ShieldCheck className="w-3 h-3" /> Lane 2: Automated Background Ledger
             </span>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Silently parses ongoing conversation streams for counterparty entities, dates, deadlines, and emotional subtext, accessible via the Jarvis Telemetry HUD.
+              Silently parses ongoing conversation streams for counterparty entities, dates, deadlines, and emotional subtext, accessible via the OmniCore Telemetry HUD.
             </p>
           </div>
         </div>

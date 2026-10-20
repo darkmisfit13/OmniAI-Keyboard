@@ -1,6 +1,6 @@
 {
   "name": "Omni Keyboard AI",
-  "description": "Smart mobile AI keyboard with live screen vision, in-the-moment advice, contextual reply suggestions, and mobile companion studios.",
+  "description": "OmniAI: You Shadow Companion & 3D Keyboard - Next-generation mobile OS shadow companion with live screen cognition, real-time contextual intelligence, and 3D volumetric keyboard by DarkMisfitStudios.",
   "requestFramePermissions": [
     "display-capture"
   ],

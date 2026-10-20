@@ -254,7 +254,7 @@ export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
           <div className="flex flex-col text-left">
             <div className="flex items-center gap-1.5 leading-none">
               <span className="text-xs font-bold font-mono tracking-wider text-white">
-                OMNI <span className="text-[#00f2fe]">KEY</span>
+                OMNI <span className="text-[#00f2fe]">AI</span>
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-ping" />
             </div>
@@ -271,7 +271,7 @@ export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
     );
   }
 
-  // Expanded Floating Desktop Co-Pilot HUD
+  // Expanded Floating Desktop Shadow Companion HUD
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-14 px-3 pointer-events-none">
       {/* Backdrop for closing or dismiss */}
@@ -294,10 +294,10 @@ export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold font-mono tracking-wider text-white">
-                  OMNI <span className="text-[#00f2fe]">KEY</span>
+                  OMNI <span className="text-[#00f2fe]">AI</span>
                 </h2>
                 <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-[#00f2fe]/10 text-[#00f2fe] border border-[#00f2fe]/40">
-                  DESKTOP CO-PILOT
+                  SHADOW COMPANION
                 </span>
               </div>
               <p className="text-[9.5px] font-mono tracking-widest text-slate-400 uppercase font-semibold">

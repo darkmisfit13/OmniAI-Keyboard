@@ -17,8 +17,11 @@ import {
   Layers,
   ChevronRight,
   Info,
-  Zap
+  Zap,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
+import { omniVoice } from '../lib/omniVoice';
 
 interface SuggestionTrio {
   witty: string;
@@ -164,14 +167,14 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
       {/* 1. TOP INTELLIGENCE STATUS STRIP */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#0B0B0C] border-b border-white/10 text-xs">
         <div className="flex items-center gap-2 overflow-hidden flex-1">
-          {/* Jarvis Telemetry HUD Trigger Button */}
+          {/* OmniCore Telemetry HUD Trigger Button */}
           <button
             onClick={onOpenTelemetryHUD}
             className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00f2fe]/10 border border-[#00f2fe]/40 text-[#00f2fe] hover:bg-[#00f2fe]/20 text-[10px] font-mono font-bold transition shadow-[0_0_10px_rgba(0,242,254,0.15)] shrink-0"
-            title="Open Jarvis Telemetry HUD (Lane 2 Memory Ledger)"
+            title="Open OmniCore Telemetry HUD (Lane 2 Memory Ledger)"
           >
             <Activity className="w-3 h-3 text-[#00f2fe] animate-pulse" />
-            <span>HUD ({telemetryNotesCount})</span>
+            <span>OmniCore ({telemetryNotesCount})</span>
           </button>
 
           {/* Real-time Advice Pill */}
@@ -352,9 +355,19 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
                 onClick={() => onSelectSuggestion(item.text)}
                 className={`flex flex-col items-start p-2 rounded-xl border text-left shadow-md transition-all active:scale-95 shrink-0 max-w-[240px] sm:max-w-[280px] group ${item.color}`}
               >
-                <div className="flex items-center gap-1.5 mb-1">
+                <div className="flex items-center justify-between w-full mb-1">
                   <span className={`px-1.5 py-0.2 rounded text-[8px] font-mono font-bold tracking-wider border ${item.tagColor}`}>
                     {item.tag}
+                  </span>
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      omniVoice.speak(item.text);
+                    }}
+                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-[#00f2fe] transition"
+                    title="Speak suggestion with OmniVoice"
+                  >
+                    <Volume2 className="w-3 h-3" />
                   </span>
                 </div>
                 <span className="text-[11px] font-medium leading-snug line-clamp-2 text-slate-200 group-hover:text-white">
@@ -369,7 +382,7 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
         <div 
           onClick={onRequestInstantAdvice}
           className="shrink-0 pl-1.5 flex items-center justify-center border-l border-white/10"
-          title="Omni Core 3D Volumetric Consciousness — Tap to analyze active screen"
+          title="Omni Core 3D Volumetric Core — Tap to analyze active screen"
         >
           <HoloOrb phase={orbPhase} size="sm" />
         </div>
@@ -389,6 +402,21 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
           <Mic className="w-4 h-4" />
         </button>
 
+        {/* OmniVoice Speak Button */}
+        <button
+          onClick={() => {
+            if (currentText) {
+              omniVoice.speak(currentText);
+            } else {
+              omniVoice.speak('OmniAI shadow companion active. Standing by for screen cognition.');
+            }
+          }}
+          className="p-2 rounded-xl border bg-black text-slate-400 border-white/10 hover:text-[#00f2fe] hover:border-[#00f2fe]/40 transition"
+          title="Listen to OmniVoice"
+        >
+          <Volume2 className="w-4 h-4" />
+        </button>
+
         {/* Input buffer */}
         <div className="relative flex-1">
           <input
@@ -401,7 +429,7 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
                 onSend(currentText);
               }
             }}
-            placeholder="Type with Omni AI co-pilot..."
+            placeholder="Type with OmniAI - Your Shadow Companion..."
             className="w-full rounded-xl bg-[#000000] border border-white/15 px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00f2fe]/80 focus:ring-1 focus:ring-[#00f2fe]/40 font-mono transition pr-8 shadow-inner"
           />
           {currentText && (

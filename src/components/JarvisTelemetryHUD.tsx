@@ -61,10 +61,10 @@ export const JarvisTelemetryHUD: React.FC<JarvisTelemetryHUDProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold tracking-wider text-[#00f2fe]">
-                  JARVIS TELEMETRY HUD
+                  OMNICORE TELEMETRY HUD
                 </span>
                 <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#7f00ff]/20 text-[#a855f7] border border-[#7f00ff]/40">
-                  LANE 2 LIVE
+                  OMNICORE LIVE
                 </span>
               </div>
               <span className="text-[10px] text-slate-400 font-mono">
@@ -171,3 +171,5 @@ export const JarvisTelemetryHUD: React.FC<JarvisTelemetryHUDProps> = ({
     </div>
   );
 };
+
+export const OmniCoreTelemetryHUD = JarvisTelemetryHUD;

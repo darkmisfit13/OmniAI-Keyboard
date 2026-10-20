@@ -13,7 +13,8 @@ import {
   Bookmark,
   Compass
 } from 'lucide-react';
-import { HoloOrb } from './HoloOrb';
+import { HoloOrb, OrbPhase } from './HoloOrb';
+import { omniVoice } from '../lib/omniVoice';
 
 interface OmniStudiosViewProps {
   onInsertToKeyboard: (text: string) => void;
@@ -25,7 +26,7 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
   currentScreenName,
 }) => {
   const [activeStudio, setActiveStudio] = useState<'orb' | 'chat' | 'voice' | 'forge' | 'vault'>('orb');
-  const [orbDemoPhase, setOrbDemoPhase] = useState<'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing'>('analyzing');
+  const [orbDemoPhase, setOrbDemoPhase] = useState<OrbPhase>('idle');
 
   // OmniChat state
   const [chatInput, setChatInput] = useState('');
@@ -122,7 +123,7 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
   };
 
   const studios = [
-    { id: 'orb', label: 'AI Orb', icon: Sparkles },
+    { id: 'orb', label: 'OmniAI', icon: Sparkles },
     { id: 'chat', label: 'OmniChat', icon: Bot },
     { id: 'voice', label: 'OmniVoice', icon: Mic },
     { id: 'forge', label: 'OmniForge', icon: Code2 },
@@ -155,67 +156,114 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
 
       {/* Main Studio Content Body */}
       <div className="flex-1 overflow-y-auto p-4">
-        {/* 0. 3D AI ORB CONSCIOUSNESS DECK */}
+        {/* 0. OMNIAI - YOUR SHADOW COMPANION DECK */}
         {activeStudio === 'orb' && (
           <div className="flex flex-col items-center justify-between h-full space-y-4 animate-in fade-in">
-            {/* Top info */}
+            {/* Top info - Three.js Plasma Neural Consciousness removed per instructions */}
             <div className="w-full text-center space-y-1">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#00f2fe] flex items-center justify-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#00f2fe]" />
-                Three.js Plasma Neural Consciousness
-              </span>
-              <h2 className="text-sm font-bold text-white">The Omni AI Orb</h2>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                Move your finger or pointer to distort the plasma ribbons. Watch the energy glow as it processes thoughts.
+              <h2 className="text-base font-bold text-white tracking-wide font-mono">
+                OmniAI - Your Shadow Companion
+              </h2>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto font-mono">
+                Pure matte black foundations, volumetric kinetic core, and nocturnal intelligence engineered for DarkMisfitStudios.
               </p>
             </div>
 
-            {/* 3D Hero Orb on pure black background with purplish blue body and neon blue highlights */}
-            <div className="relative flex items-center justify-center p-6 my-2 rounded-3xl bg-black border border-slate-800 shadow-[0_0_50px_rgba(99,102,241,0.25)]">
+            {/* 3D Hero Orb on pure matte black background */}
+            <div className="relative flex flex-col items-center justify-center p-6 my-1 rounded-3xl bg-black border border-white/10 shadow-[0_0_50px_rgba(0,242,254,0.25)] w-full max-w-xs">
               <HoloOrb phase={orbDemoPhase} size="hero" showStatusLabel />
+              
+              <div className="mt-7 flex items-center gap-2">
+                <span className="text-[10px] font-mono text-slate-400">Current Mode:</span>
+                <span className="text-[10px] font-mono font-bold text-[#00f2fe] uppercase px-2 py-0.5 rounded bg-[#00f2fe]/10 border border-[#00f2fe]/40">
+                  {orbDemoPhase === 'idle' ? 'Idle (Slow Breathing)' :
+                   orbDemoPhase === 'analyzing' ? 'Thinking (Turbulent Spin)' :
+                   orbDemoPhase === 'talking' ? 'Talking (Sonic Resonance)' :
+                   orbDemoPhase === 'texting' || orbDemoPhase === 'typing' ? 'Texting (Mechanical Cadence)' :
+                   'Auto-Pilot (High-Speed)'}
+                </span>
+              </div>
             </div>
 
-            {/* Interactive Thinking State Controller */}
-            <div className="w-full space-y-2 pt-2">
+            {/* Interactive Kinetic State Controller */}
+            <div className="w-full space-y-2 pt-1 font-mono">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block text-center">
-                Simulate AI Thinking States:
+                Interactive Kinetic States (Dynamic Orb Motion):
               </span>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 {[
-                  { id: 'idle', label: 'Idle' },
-                  { id: 'observing', label: 'Observing' },
-                  { id: 'analyzing', label: 'Thinking' },
-                  { id: 'suggesting', label: 'Suggesting' },
-                  { id: 'typing', label: 'Typing' },
+                  { id: 'idle', label: 'Idle (Slow)', desc: 'Hypnotic calm' },
+                  { id: 'analyzing', label: 'Thinking', desc: 'Turbulent spin' },
+                  { id: 'talking', label: 'Talking', desc: 'Sonic waves' },
+                  { id: 'texting', label: 'Texting', desc: 'Keystroke ripple' },
+                  { id: 'auto', label: 'Auto Mode', desc: 'Hyper dispatch' },
                 ].map((st) => (
                   <button
                     key={st.id}
-                    onClick={() => setOrbDemoPhase(st.id as any)}
-                    className={`py-2 px-1 rounded-xl text-xs font-semibold transition text-center ${
+                    onClick={() => {
+                      setOrbDemoPhase(st.id as any);
+                      if (st.id === 'talking') {
+                        omniVoice.speak('I am Omni. Your shadow companion. Real-time vision link established.');
+                      }
+                    }}
+                    className={`py-2 px-1.5 rounded-xl text-xs font-semibold transition text-center flex flex-col items-center gap-0.5 ${
                       orbDemoPhase === st.id
                         ? 'bg-[#00f2fe]/20 text-[#00f2fe] border border-[#00f2fe]/50 shadow-md shadow-[#00f2fe]/20'
-                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        : 'bg-black/90 text-slate-400 hover:text-slate-200 border border-white/10'
                     }`}
                   >
-                    {st.label}
+                    <span className="font-bold">{st.label}</span>
+                    <span className="text-[9px] text-slate-500">{st.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Color Palette Palette Legend */}
-            <div className="w-full p-3 rounded-2xl bg-black/80 border border-slate-800 text-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-black border border-slate-700 shadow-inner" title="Background Black" />
-                <span className="text-[11px] text-slate-300">Background: Black</span>
+            {/* OmniVoice Quick Speech Synthesizer Preview */}
+            <div className="w-full p-3 rounded-2xl bg-black border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-[#00f2fe] uppercase flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-[#00f2fe]" />
+                  OmniVoice Nocturnal Audio Engine
+                </span>
+                <span className="text-[9px] font-mono text-slate-400">Deep Stoic Cadence</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#6366f1] shadow-sm shadow-[#6366f1]/50" title="Purplish Blue" />
-                <span className="text-[11px] text-slate-300">Plasma: Purplish Blue</span>
+              <div className="flex items-center gap-1.5">
+                {[
+                  'I am Omni. Your shadow companion.',
+                  'The void does not negotiate. Frame your reply cold.',
+                  'Autonomous auto-pilot armed. Viewport secured.'
+                ].map((quote, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setOrbDemoPhase('talking');
+                      omniVoice.speak(quote, {
+                        onEnd: () => setOrbDemoPhase('idle'),
+                      });
+                    }}
+                    className="flex-1 p-1.5 rounded-lg bg-[#0B0B0C] border border-white/5 hover:border-[#00f2fe]/40 text-[10px] font-mono text-slate-300 hover:text-white transition text-center truncate"
+                    title={`Speak: "${quote}"`}
+                  >
+                    "{quote.slice(0, 18)}..."
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#00f2fe] shadow-sm shadow-[#00f2fe]/50" title="Light Neon Blue" />
-                <span className="text-[11px] text-slate-300">Highlight: Neon Blue</span>
+            </div>
+
+            {/* Official Color Palette Legend */}
+            <div className="w-full p-2.5 rounded-2xl bg-black/90 border border-white/10 text-xs flex items-center justify-between font-mono">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-black border border-slate-700 shadow-inner" />
+                <span className="text-[10px] text-slate-400">Base: Matte Black (#000000)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-[#7f00ff] shadow-sm shadow-[#7f00ff]/50" />
+                <span className="text-[10px] text-slate-400">Plasma Violet (#7f00ff)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-[#00f2fe] shadow-sm shadow-[#00f2fe]/50" />
+                <span className="text-[10px] text-slate-400">Electric Cyan (#00f2fe)</span>
               </div>
             </div>
           </div>

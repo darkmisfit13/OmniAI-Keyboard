@@ -28,7 +28,8 @@ export const KeyboardExtensionBridge: React.FC = () => {
   // --- iOS NATIVE SOURCE TREE ---
   const iosViewController = `//
 // OmniKeyboardViewController.swift
-// OmniAI OS Co-Pilot Keyboard Extension
+// OmniAI: You Shadow Companion & 3D Keyboard
+// DarkMisfitStudios - High-Tech Nocturnal Shadow Companion
 //
 
 import UIKit
@@ -193,6 +194,8 @@ class OmniScreenCognitionService: RPBroadcastSampleHandler {
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDisplayName</key>
+    <string>OmniAI: You Shadow Companion &amp; 3D Keyboard</string>
     <key>CFBundleIdentifier</key>
     <string>com.omniai.keyboard.extension</string>
     <key>NSExtension</key>
@@ -354,7 +357,7 @@ class OmniScreenAccessibilityService : AccessibilityService() {
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
 
     <application
-        android:label="OmniAI Keyboard"
+        android:label="OmniAI: You Shadow Companion &amp; 3D Keyboard"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <!-- 1. Custom InputMethodService (Keyboard Engine) -->

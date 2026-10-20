@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
-export type OrbPhase = 'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing' | 'auto';
+export type OrbPhase = 'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing' | 'auto' | 'talking' | 'texting';
 
 interface HoloOrbProps {
   phase?: OrbPhase;
@@ -258,26 +258,39 @@ export const HoloOrb: React.FC<HoloOrbProps> = ({
         let targetTurbulence = 0.18;
         let targetPulse = 1.2;
 
-        if (phase === 'auto') {
-          speedMultiplier = 3.2;
-          targetTurbulence = 0.65;
-          targetPulse = 4.2;
+        if (phase === 'idle') {
+          // Slow, hypnotic, breathing pulse when idle
+          speedMultiplier = 0.42;
+          targetTurbulence = 0.08;
+          targetPulse = 0.8;
         } else if (phase === 'analyzing') {
-          speedMultiplier = 2.6;
-          targetTurbulence = 0.48;
-          targetPulse = 3.0;
+          // Intense turbulent spinning and neon bursts when thinking/calculating
+          speedMultiplier = 3.2;
+          targetTurbulence = 0.68;
+          targetPulse = 4.2;
+        } else if (phase === 'talking') {
+          // High-frequency sonic harmonic oscillation when OmniAI speaks aloud
+          speedMultiplier = 2.4;
+          targetTurbulence = 0.45;
+          targetPulse = 6.4;
+        } else if (phase === 'texting' || phase === 'typing') {
+          // Mechanical staccato ripple & keystroke cadence when user or AI is texting
+          speedMultiplier = 1.9;
+          targetTurbulence = 0.36;
+          targetPulse = 3.4;
+        } else if (phase === 'auto') {
+          // Autonomous auto-pilot high speed dispatch
+          speedMultiplier = 3.6;
+          targetTurbulence = 0.72;
+          targetPulse = 4.6;
         } else if (phase === 'observing') {
-          speedMultiplier = 1.5;
-          targetTurbulence = 0.28;
-          targetPulse = 1.8;
-        } else if (phase === 'suggesting') {
           speedMultiplier = 1.3;
-          targetTurbulence = 0.24;
-          targetPulse = 2.0;
-        } else if (phase === 'typing') {
-          speedMultiplier = 1.8;
-          targetTurbulence = 0.34;
-          targetPulse = 2.4;
+          targetTurbulence = 0.22;
+          targetPulse = 1.6;
+        } else if (phase === 'suggesting') {
+          speedMultiplier = 1.2;
+          targetTurbulence = 0.20;
+          targetPulse = 1.8;
         }
 
         uniforms.uTime.value += delta * speedMultiplier;
@@ -331,17 +344,22 @@ export const HoloOrb: React.FC<HoloOrbProps> = ({
 
   const getStatusLabel = () => {
     switch (phase) {
+      case 'talking':
+        return 'OmniVoice Speaking';
+      case 'texting':
+      case 'typing':
+        return 'Texting Stream';
       case 'analyzing':
-        return 'Cognition Active';
+        return 'Omni Thinking';
+      case 'auto':
+        return 'Auto-Pilot Active';
       case 'observing':
         return 'Scanning Viewport';
       case 'suggesting':
         return 'Suggestions Ready';
-      case 'typing':
-        return 'Volumetric Stream';
       case 'idle':
       default:
-        return 'OmniWave Core';
+        return 'Omni Core Idle';
     }
   };
 

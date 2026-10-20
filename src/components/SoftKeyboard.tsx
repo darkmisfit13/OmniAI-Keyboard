@@ -293,17 +293,25 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
           <Smile className="w-4 h-4" />
         </button>
 
-        {/* Volumetric Spacebar with OmniWave glow */}
+        {/* Volumetric Spacebar named 'THE VOID' in cool graphic letters */}
         <button
           onClick={handleSpaceClick}
-          className={`flex-1 h-11 rounded-lg keycap-3d text-slate-300 text-xs font-mono flex items-center justify-center relative overflow-hidden group ${
-            activeKey === 'space' ? 'depressed' : ''
+          className={`flex-1 h-11 rounded-lg keycap-3d text-slate-300 text-xs font-mono flex items-center justify-center relative overflow-hidden group border border-[#00f2fe]/20 hover:border-[#00f2fe]/50 ${
+            activeKey === 'space' ? 'depressed ring-1 ring-[#00f2fe]/60' : ''
           }`}
+          title="The Void"
         >
-          <span className="relative z-10 text-[10px] tracking-widest uppercase font-mono text-slate-400 group-hover:text-[#00f2fe] transition-colors">
-            OmniWave Space
-          </span>
-          <div className="absolute inset-x-10 bottom-1.5 h-0.5 bg-gradient-to-r from-transparent via-[#00f2fe]/60 to-transparent" />
+          {/* Subtle cosmic void backdrop */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-[#0B0B0C] to-black/90" />
+          
+          <div className="relative z-10 flex items-center justify-center gap-2">
+            <span className="text-[11px] font-black tracking-[0.38em] uppercase font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#00f2fe] via-slate-100 to-[#7f00ff] drop-shadow-[0_0_8px_rgba(0,242,254,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(0,242,254,0.9)] transition-all">
+              THE VOID
+            </span>
+          </div>
+
+          {/* Holographic glowing line underneath */}
+          <div className="absolute inset-x-8 bottom-1.5 h-[2px] bg-gradient-to-r from-transparent via-[#00f2fe]/70 to-transparent shadow-[0_0_8px_rgba(0,242,254,0.7)]" />
         </button>
 
         {/* Enter key with Plasma Violet & Electric Cyan depth */}
