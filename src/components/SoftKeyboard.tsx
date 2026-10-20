@@ -3,11 +3,11 @@ import {
   Delete, 
   ArrowUp, 
   Smile, 
-  Globe, 
   CornerDownLeft, 
   Volume2, 
   VolumeX,
-  ChevronDown
+  ChevronDown,
+  Sparkles
 } from 'lucide-react';
 
 interface SoftKeyboardProps {
@@ -31,50 +31,62 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
   const [layoutMode, setLayoutMode] = useState<'alpha' | 'numbers' | 'symbols'>('alpha');
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  // Play subtle keyboard click sound using Web Audio API
-  const playClick = () => {
+  // Play mechanical switch click sound using Web Audio API
+  const playClick = (type: 'standard' | 'space' | 'enter' = 'standard') => {
     if (!soundEnabled) return;
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
+      
+      const freq = type === 'space' ? 420 : type === 'enter' ? 880 : 640;
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.03);
-      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.035);
+      
+      gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+      
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.03);
+      osc.stop(audioCtx.currentTime + 0.035);
     } catch {
-      // Audio not permitted or context suspended
+      // Audio context suppressed
     }
   };
 
   const handleKey = (char: string) => {
-    playClick();
+    playClick('standard');
+    setActiveKey(char);
+    setTimeout(() => setActiveKey(null), 120);
     const finalChar = isShift ? char.toUpperCase() : char.toLowerCase();
     onKeyPress(finalChar);
   };
 
   const handleBackspaceClick = () => {
-    playClick();
+    playClick('standard');
+    setActiveKey('backspace');
+    setTimeout(() => setActiveKey(null), 120);
     onBackspace();
   };
 
   const handleSpaceClick = () => {
-    playClick();
+    playClick('space');
+    setActiveKey('space');
+    setTimeout(() => setActiveKey(null), 120);
     onSpace();
   };
 
   const handleEnterClick = () => {
-    playClick();
+    playClick('enter');
+    setActiveKey('enter');
+    setTimeout(() => setActiveKey(null), 120);
     onEnter();
   };
 
-  // Keyboard Rows
   const alphaRows = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
@@ -94,20 +106,21 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
   ];
 
   const emojis = [
-    '👍', '🙌', '🔥', '✨', '💡', '🚀', '💯', '❤️',
-    '😂', '🤝', '👀', '🎯', '⚡', '☕', '💼', '🙏',
+    '⚡', '🔥', '✨', '💀', '🖤', '💡', '🎯', '🚀',
+    '👍', '🤝', '👀', '💯', '🙏', '☕', '💼', '🍷',
   ];
 
   if (isCollapsed) {
     return (
-      <div className="bg-slate-950 px-3 py-1.5 flex items-center justify-between border-t border-slate-800 text-xs text-slate-400">
-        <span>Keyboard Minimized</span>
+      <div className="bg-[#000000] px-4 py-2 flex items-center justify-between border-t border-white/10 text-xs text-slate-400">
+        <span className="font-mono text-[11px] text-slate-500">Volumetric Keyboard Docked</span>
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="text-cyan-400 hover:text-cyan-300 font-medium"
+            className="text-[#00f2fe] hover:text-[#38bdf8] font-mono font-semibold text-xs flex items-center gap-1"
           >
-            Expand Keyboard ↑
+            <span>Restore Keyboard</span>
+            <span>↑</span>
           </button>
         )}
       </div>
@@ -117,22 +130,24 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
   const currentRows = layoutMode === 'alpha' ? alphaRows : layoutMode === 'numbers' ? numberRows : symbolRows;
 
   return (
-    <div className="bg-[#0b0f19] select-none border-t border-slate-800/80 p-1.5 pb-2 touch-manipulation">
-      {/* Mini Keyboard Toolbar */}
-      <div className="flex items-center justify-between px-2 py-0.5 text-[10px] text-slate-400 mb-1">
-        <div className="flex items-center gap-2">
+    <div className="bg-[#000000] select-none border-t border-white/10 p-1.5 pb-2 touch-manipulation relative">
+      {/* Mini Mechanical Toolbar */}
+      <div className="flex items-center justify-between px-2 py-0.5 text-[10px] font-mono text-slate-500 mb-1">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="flex items-center gap-1 hover:text-slate-200 transition"
-            title="Toggle Key Sounds"
+            className="flex items-center gap-1 hover:text-slate-300 transition"
+            title="Toggle Mechanical Key Switch Audio"
           >
-            {soundEnabled ? <Volume2 className="w-3 h-3 text-cyan-400" /> : <VolumeX className="w-3 h-3" />}
-            <span>{soundEnabled ? 'Sound On' : 'Mute'}</span>
+            {soundEnabled ? <Volume2 className="w-3 h-3 text-[#00f2fe]" /> : <VolumeX className="w-3 h-3" />}
+            <span>{soundEnabled ? 'Switch: Linear' : 'Muted'}</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-cyan-400/80 font-mono">Omni Key Engine</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[#00f2fe]/80 font-mono text-[9px] tracking-wider">
+            KINETIC 3D CAPS
+          </span>
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
@@ -147,15 +162,15 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
 
       {/* Emoji Drawer */}
       {showEmojiPicker && (
-        <div className="grid grid-cols-8 gap-1.5 p-2 bg-slate-900 rounded-xl mb-1.5 border border-slate-800 animate-in fade-in duration-100">
+        <div className="grid grid-cols-8 gap-1.5 p-2 bg-[#0B0B0C] rounded-xl mb-1.5 border border-[#00f2fe]/30 shadow-[0_0_15px_rgba(0,242,254,0.15)] animate-in fade-in duration-100">
           {emojis.map((emoji, idx) => (
             <button
               key={idx}
               onClick={() => {
-                playClick();
+                playClick('standard');
                 onKeyPress(emoji);
               }}
-              className="text-lg p-1.5 rounded-lg hover:bg-slate-800 active:scale-125 transition-transform"
+              className="text-lg p-1.5 rounded-lg hover:bg-white/10 active:scale-125 transition-transform"
             >
               {emoji}
             </button>
@@ -164,43 +179,53 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
       )}
 
       {/* Row 1 */}
-      <div className="flex justify-center gap-1 mb-1">
-        {currentRows[0].map((k) => (
-          <button
-            key={k}
-            onClick={() => handleKey(k)}
-            className="flex-1 max-w-[38px] h-10 rounded-lg bg-slate-800/90 text-white font-medium text-sm flex items-center justify-center shadow hover:bg-slate-700 active:bg-cyan-600/40 active:scale-95 transition-all border border-slate-700/60"
-          >
-            {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
-          </button>
-        ))}
+      <div className="flex justify-center gap-1 mb-1.5">
+        {currentRows[0].map((k) => {
+          const isPressed = activeKey === k;
+          return (
+            <button
+              key={k}
+              onClick={() => handleKey(k)}
+              className={`flex-1 max-w-[38px] h-11 rounded-lg keycap-3d text-white font-medium text-sm flex items-center justify-center font-mono ${
+                isPressed ? 'depressed' : ''
+              }`}
+            >
+              {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
+            </button>
+          );
+        })}
       </div>
 
       {/* Row 2 */}
-      <div className="flex justify-center gap-1 mb-1 px-3">
-        {currentRows[1].map((k) => (
-          <button
-            key={k}
-            onClick={() => handleKey(k)}
-            className="flex-1 max-w-[38px] h-10 rounded-lg bg-slate-800/90 text-white font-medium text-sm flex items-center justify-center shadow hover:bg-slate-700 active:bg-cyan-600/40 active:scale-95 transition-all border border-slate-700/60"
-          >
-            {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
-          </button>
-        ))}
+      <div className="flex justify-center gap-1 mb-1.5 px-3">
+        {currentRows[1].map((k) => {
+          const isPressed = activeKey === k;
+          return (
+            <button
+              key={k}
+              onClick={() => handleKey(k)}
+              className={`flex-1 max-w-[38px] h-11 rounded-lg keycap-3d text-white font-medium text-sm flex items-center justify-center font-mono ${
+                isPressed ? 'depressed' : ''
+              }`}
+            >
+              {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
+            </button>
+          );
+        })}
       </div>
 
       {/* Row 3 with Shift & Backspace */}
-      <div className="flex justify-center gap-1 mb-1">
+      <div className="flex justify-center gap-1 mb-1.5">
         {layoutMode === 'alpha' ? (
           <button
             onClick={() => {
-              playClick();
+              playClick('standard');
               setIsShift(!isShift);
             }}
-            className={`w-11 h-10 rounded-lg text-xs font-semibold flex items-center justify-center border transition-all ${
+            className={`w-11 h-11 rounded-lg text-xs font-mono font-bold flex items-center justify-center transition-all ${
               isShift
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md shadow-cyan-500/30'
-                : 'bg-slate-800/90 text-slate-200 border-slate-700/60 hover:bg-slate-700'
+                ? 'keycap-primary-3d text-[#00f2fe]'
+                : 'keycap-3d text-slate-300'
             }`}
           >
             <ArrowUp className="w-4 h-4" />
@@ -208,28 +233,35 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
         ) : (
           <button
             onClick={() => {
-              playClick();
+              playClick('standard');
               setLayoutMode(layoutMode === 'numbers' ? 'symbols' : 'numbers');
             }}
-            className="w-11 h-10 rounded-lg bg-slate-800/90 text-slate-200 text-xs font-bold flex items-center justify-center border border-slate-700/60 hover:bg-slate-700"
+            className="w-11 h-11 rounded-lg keycap-3d text-slate-200 text-xs font-mono font-bold flex items-center justify-center"
           >
             {layoutMode === 'numbers' ? '#+=' : '123'}
           </button>
         )}
 
-        {currentRows[2].map((k) => (
-          <button
-            key={k}
-            onClick={() => handleKey(k)}
-            className="flex-1 max-w-[38px] h-10 rounded-lg bg-slate-800/90 text-white font-medium text-sm flex items-center justify-center shadow hover:bg-slate-700 active:bg-cyan-600/40 active:scale-95 transition-all border border-slate-700/60"
-          >
-            {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
-          </button>
-        ))}
+        {currentRows[2].map((k) => {
+          const isPressed = activeKey === k;
+          return (
+            <button
+              key={k}
+              onClick={() => handleKey(k)}
+              className={`flex-1 max-w-[38px] h-11 rounded-lg keycap-3d text-white font-medium text-sm flex items-center justify-center font-mono ${
+                isPressed ? 'depressed' : ''
+              }`}
+            >
+              {isShift && layoutMode === 'alpha' ? k.toUpperCase() : k}
+            </button>
+          );
+        })}
 
         <button
           onClick={handleBackspaceClick}
-          className="w-11 h-10 rounded-lg bg-slate-800/90 text-slate-200 text-xs font-semibold flex items-center justify-center border border-slate-700/60 hover:bg-slate-700 active:bg-red-500/30 active:text-red-300 transition-all"
+          className={`w-11 h-11 rounded-lg keycap-3d text-slate-300 text-xs font-mono flex items-center justify-center ${
+            activeKey === 'backspace' ? 'depressed' : ''
+          }`}
         >
           <Delete className="w-4 h-4" />
         </button>
@@ -239,43 +271,47 @@ export const SoftKeyboard: React.FC<SoftKeyboardProps> = ({
       <div className="flex justify-center gap-1.5 px-0.5">
         <button
           onClick={() => {
-            playClick();
+            playClick('standard');
             setLayoutMode(layoutMode === 'alpha' ? 'numbers' : 'alpha');
           }}
-          className="w-12 h-10 rounded-lg bg-slate-800/90 text-slate-200 text-xs font-bold flex items-center justify-center border border-slate-700/60 hover:bg-slate-700"
+          className="w-12 h-11 rounded-lg keycap-3d text-slate-300 text-xs font-mono font-bold flex items-center justify-center"
         >
           {layoutMode === 'alpha' ? '?123' : 'ABC'}
         </button>
 
         <button
           onClick={() => {
-            playClick();
+            playClick('standard');
             setShowEmojiPicker(!showEmojiPicker);
           }}
-          className={`w-10 h-10 rounded-lg text-xs font-bold flex items-center justify-center border transition-all ${
+          className={`w-10 h-11 rounded-lg text-xs font-mono font-bold flex items-center justify-center transition-all ${
             showEmojiPicker
-              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
-              : 'bg-slate-800/90 text-slate-300 border-slate-700/60 hover:bg-slate-700'
+              ? 'keycap-primary-3d text-[#00f2fe]'
+              : 'keycap-3d text-slate-300'
           }`}
         >
           <Smile className="w-4 h-4" />
         </button>
 
-        {/* Spacebar */}
+        {/* Volumetric Spacebar with OmniWave glow */}
         <button
           onClick={handleSpaceClick}
-          className="flex-1 h-10 rounded-lg bg-gradient-to-r from-slate-800 via-slate-800/95 to-slate-800 text-slate-400 text-xs font-medium flex items-center justify-center shadow border border-slate-700/60 hover:border-cyan-500/40 active:scale-[0.98] transition-all relative overflow-hidden group"
+          className={`flex-1 h-11 rounded-lg keycap-3d text-slate-300 text-xs font-mono flex items-center justify-center relative overflow-hidden group ${
+            activeKey === 'space' ? 'depressed' : ''
+          }`}
         >
-          <span className="relative z-10 text-[11px] text-slate-300 group-hover:text-cyan-300 transition-colors">
-            space
+          <span className="relative z-10 text-[10px] tracking-widest uppercase font-mono text-slate-400 group-hover:text-[#00f2fe] transition-colors">
+            OmniWave Space
           </span>
-          <div className="absolute inset-x-8 bottom-1 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+          <div className="absolute inset-x-10 bottom-1.5 h-0.5 bg-gradient-to-r from-transparent via-[#00f2fe]/60 to-transparent" />
         </button>
 
-        {/* Enter key */}
+        {/* Enter key with Plasma Violet & Electric Cyan depth */}
         <button
           onClick={handleEnterClick}
-          className="w-14 h-10 rounded-lg bg-cyan-600 text-slate-950 font-bold text-xs flex items-center justify-center shadow-md shadow-cyan-600/30 hover:bg-cyan-500 active:scale-95 transition-all"
+          className={`w-14 h-11 rounded-lg keycap-primary-3d text-[#00f2fe] font-mono font-bold text-xs flex items-center justify-center ${
+            activeKey === 'enter' ? 'depressed' : ''
+          }`}
         >
           <CornerDownLeft className="w-4 h-4" />
         </button>

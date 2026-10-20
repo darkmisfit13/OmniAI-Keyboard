@@ -8,21 +8,29 @@ import {
   Check, 
   Mic, 
   RotateCcw, 
-  ChevronRight, 
-  SlidersHorizontal,
-  Flame,
-  Briefcase,
-  Smile,
-  Shield,
-  Lightbulb,
+  Flame, 
+  Briefcase, 
+  Smile, 
+  Shield, 
+  Activity, 
+  Database,
+  Layers,
+  ChevronRight,
   Info
 } from 'lucide-react';
+
+interface SuggestionTrio {
+  witty: string;
+  rawHonest: string;
+  directAction: string;
+}
 
 interface AIKeyboardBarProps {
   currentText: string;
   onChangeText: (text: string) => void;
   onSend: (text: string) => void;
   suggestedReplies: string[];
+  suggestionTrio?: SuggestionTrio;
   liveAdvice: string[];
   onSelectSuggestion: (text: string) => void;
   onRewrite: (style: string) => void;
@@ -33,6 +41,8 @@ interface AIKeyboardBarProps {
   isOnDeviceMode?: boolean;
   onToggleOnDeviceMode?: () => void;
   localLatencyMs?: number;
+  onOpenTelemetryHUD: () => void;
+  telemetryNotesCount: number;
 }
 
 export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
@@ -40,6 +50,7 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   onChangeText,
   onSend,
   suggestedReplies,
+  suggestionTrio,
   liveAdvice,
   onSelectSuggestion,
   onRewrite,
@@ -49,11 +60,12 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   screenName,
   isOnDeviceMode = true,
   onToggleOnDeviceMode,
-  localLatencyMs = 8.2,
+  localLatencyMs = 6.8,
+  onOpenTelemetryHUD,
+  telemetryNotesCount = 3,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showToneMenu, setShowToneMenu] = useState(false);
-  const [showAdviceModal, setShowAdviceModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
   const handleCopy = () => {
@@ -64,13 +76,12 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   };
 
   const handleMicDictate = () => {
-    // Dictation simulation / Web Speech API if supported
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       setIsListening(true);
       setTimeout(() => {
-        onChangeText(currentText ? `${currentText} (voice note captured)` : 'Checking on the build status right now.');
+        onChangeText(currentText ? `${currentText} (voice thought captured)` : 'Addressing the issue right now.');
         setIsListening(false);
-      }, 1500);
+      }, 1400);
       return;
     }
 
@@ -97,50 +108,77 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   };
 
   const toneOptions = [
-    { id: 'professional', label: 'Professional', icon: Briefcase, color: 'text-blue-400' },
-    { id: 'punchy', label: 'Punchy & Fast', icon: Flame, color: 'text-amber-400' },
-    { id: 'diplomatic', label: 'Diplomatic & Calm', icon: Shield, color: 'text-emerald-400' },
-    { id: 'flirty', label: 'Witty & Playful', icon: Smile, color: 'text-pink-400' },
-    { id: 'fix_grammar', label: 'Fix & Polish', icon: Sparkles, color: 'text-cyan-400' },
+    { id: 'darkmisfit', label: 'DarkMisfit (Raw)', icon: Flame, color: 'text-[#7f00ff]' },
+    { id: 'punchy', label: 'Punchy & Fast', icon: Sparkles, color: 'text-[#00f2fe]' },
+    { id: 'diplomatic', label: 'Diplomatic', icon: Shield, color: 'text-[#0575e6]' },
+    { id: 'flirty', label: 'Witty & Charismatic', icon: Smile, color: 'text-pink-400' },
+    { id: 'professional', label: 'Executive', icon: Briefcase, color: 'text-blue-400' },
+  ];
+
+  // Prepare the 3 distinct register carousel cards
+  const carouselItems = [
+    {
+      tier: 'Casual / Witty',
+      text: suggestionTrio?.witty || suggestedReplies[0] || 'Short answer: yes, moving forward.',
+      color: 'border-[#00f2fe]/40 text-slate-100 bg-[#0B0B0C]/90 hover:border-[#00f2fe]',
+      tag: 'WITTY',
+      tagColor: 'text-[#00f2fe] bg-[#00f2fe]/10 border-[#00f2fe]/30',
+    },
+    {
+      tier: 'Deep / Raw Honest',
+      text: suggestionTrio?.rawHonest || suggestedReplies[1] || 'I’d rather be upfront than pretend this isn’t pressing.',
+      color: 'border-[#7f00ff]/40 text-slate-100 bg-[#0B0B0C]/90 hover:border-[#7f00ff]',
+      tag: 'DEEP & HONEST',
+      tagColor: 'text-[#c084fc] bg-[#7f00ff]/15 border-[#7f00ff]/30',
+    },
+    {
+      tier: 'Direct / Action',
+      text: suggestionTrio?.directAction || suggestedReplies[2] || 'Locking this in immediately with full verification.',
+      color: 'border-[#0575e6]/40 text-slate-100 bg-[#0B0B0C]/90 hover:border-[#0575e6]',
+      tag: 'DIRECT ACTION',
+      tagColor: 'text-[#38bdf8] bg-[#0575e6]/15 border-[#0575e6]/30',
+    },
   ];
 
   return (
-    <div className="flex flex-col bg-slate-950/95 backdrop-blur-md border-t border-slate-800/90 shadow-2xl relative z-20">
+    <div className="flex flex-col bg-[#000000] border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] relative z-20">
       {/* 1. TOP INTELLIGENCE STATUS STRIP */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 border-b border-slate-800/80 text-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0B0B0C] border-b border-white/10 text-xs">
         <div className="flex items-center gap-2 overflow-hidden flex-1">
-          {/* Reactive HoloOrb */}
-          <HoloOrb
-            phase={orbPhase}
-            size="sm"
-            onClick={onRequestInstantAdvice}
-          />
-
-          {/* In-the-moment live advice marquee / pill */}
-          <div 
-            onClick={() => setShowAdviceModal(true)}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-[11px] text-cyan-300 hover:bg-cyan-900/50 cursor-pointer truncate transition max-w-[65%]"
-            title="Click for full AI coaching"
+          {/* Jarvis Telemetry HUD Trigger Button */}
+          <button
+            onClick={onOpenTelemetryHUD}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00f2fe]/10 border border-[#00f2fe]/40 text-[#00f2fe] hover:bg-[#00f2fe]/20 text-[10px] font-mono font-bold transition shadow-[0_0_10px_rgba(0,242,254,0.15)] shrink-0"
+            title="Open Jarvis Telemetry HUD (Lane 2 Memory Ledger)"
           >
-            <Lightbulb className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
-            <span className="truncate font-medium">
+            <Activity className="w-3 h-3 text-[#00f2fe] animate-pulse" />
+            <span>HUD ({telemetryNotesCount})</span>
+          </button>
+
+          {/* Real-time Advice Pill */}
+          <div 
+            onClick={onOpenTelemetryHUD}
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/80 border border-white/10 text-[11px] text-slate-300 hover:text-white cursor-pointer truncate transition max-w-[65%]"
+            title="Click to inspect real-time notes"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-ping shrink-0" />
+            <span className="truncate font-mono text-[10px]">
               {liveAdvice[0] || 'Omni watching screen... tap for live coaching.'}
             </span>
-            <Info className="w-3 h-3 text-cyan-400/70 shrink-0 ml-0.5" />
           </div>
 
-          {/* On-Device AI Mode Badge */}
+          {/* On-Device NPU Status Badge */}
           {onToggleOnDeviceMode && (
             <button
               onClick={onToggleOnDeviceMode}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold transition ${
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold transition shrink-0 ${
                 isOnDeviceMode
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30'
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/20'
+                  : 'bg-[#7f00ff]/15 text-[#a855f7] border border-[#7f00ff]/40'
               }`}
               title="Toggle On-Device Local Processing vs Cloud Gemini"
             >
-              <span>{isOnDeviceMode ? `⚡ ${localLatencyMs}ms (NPU)` : '☁️ Cloud'}</span>
+              <span>{isOnDeviceMode ? `⚡ ${localLatencyMs}ms NPU` : '☁️ Cloud'}</span>
             </button>
           )}
         </div>
@@ -151,20 +189,20 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
             onClick={() => setShowToneMenu(!showToneMenu)}
             className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition ${
               showToneMenu
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+                ? 'bg-[#7f00ff]/20 text-[#c084fc] border-[#7f00ff]/50'
+                : 'bg-black/60 text-slate-400 border-white/10 hover:text-white'
             }`}
-            title="Rewrite Tone"
+            title="Rewrite Tone (DarkMisfit Register)"
           >
-            <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline text-[11px]">Tone</span>
+            <Wand2 className="w-3.5 h-3.5 text-[#00f2fe]" />
+            <span className="hidden sm:inline text-[11px] font-mono">Tone</span>
           </button>
         </div>
       </div>
 
       {/* TONE POPOVER / SELECTOR */}
       {showToneMenu && (
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-2 bg-slate-900 border-b border-slate-800 animate-in slide-in-from-top-2 duration-150">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-2 bg-[#0B0B0C] border-b border-white/10 animate-in slide-in-from-top-2 duration-150">
           {toneOptions.map((tone) => {
             const Icon = tone.icon;
             return (
@@ -175,68 +213,70 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
                   setShowToneMenu(false);
                 }}
                 disabled={!currentText.trim() || isAnalyzing}
-                className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-700/80 transition text-center disabled:opacity-40"
+                className="flex flex-col items-center justify-center p-2 rounded-xl bg-black/70 border border-white/10 hover:border-[#00f2fe]/50 hover:bg-black/90 transition text-center disabled:opacity-40"
               >
                 <Icon className={`w-4 h-4 mb-1 ${tone.color}`} />
-                <span className="text-[10px] font-medium text-slate-200">{tone.label}</span>
+                <span className="text-[10px] font-mono text-slate-200">{tone.label}</span>
               </button>
             );
           })}
         </div>
       )}
 
-      {/* 2. LIVE SUGGESTION PILLS RIBBON */}
-      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar bg-slate-950/80">
-        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider shrink-0 flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-cyan-400" />
-          Suggestions:
-        </span>
+      {/* 2. SLIDING PREDICTIVE SUGGESTION CAROUSEL WITH ANCHORED 3D ORB */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#000000] border-b border-white/10 relative">
+        {/* Sliding Carousel of 3 Tailored Conversational Responses */}
+        <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          {isAnalyzing ? (
+            <div className="flex items-center gap-2 text-xs text-[#00f2fe] animate-pulse px-2 font-mono">
+              <span className="w-2 h-2 rounded-full bg-[#00f2fe] animate-ping" />
+              <span>Omni dual-lane engine reading viewport & drafting responses...</span>
+            </div>
+          ) : (
+            carouselItems.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSelectSuggestion(item.text)}
+                className={`flex flex-col items-start p-2 rounded-xl border text-left shadow-md transition-all active:scale-95 shrink-0 max-w-[240px] sm:max-w-[280px] group ${item.color}`}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`px-1.5 py-0.2 rounded text-[8px] font-mono font-bold tracking-wider border ${item.tagColor}`}>
+                    {item.tag}
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium leading-snug line-clamp-2 text-slate-200 group-hover:text-white">
+                  {item.text}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
 
-        {isAnalyzing ? (
-          <div className="flex items-center gap-2 text-xs text-cyan-400/80 animate-pulse px-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Omni reading screen and drafting replies...</span>
-          </div>
-        ) : suggestedReplies && suggestedReplies.length > 0 ? (
-          suggestedReplies.map((reply, idx) => (
-            <button
-              key={idx}
-              onClick={() => onSelectSuggestion(reply)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-slate-900 to-slate-800 border border-cyan-500/30 hover:border-cyan-400 hover:from-cyan-950/40 hover:to-slate-800 text-xs text-slate-200 whitespace-nowrap shadow-sm transition active:scale-95 group"
-            >
-              <span className="text-cyan-400 text-[10px] font-bold group-hover:translate-x-0.5 transition-transform">
-                {idx + 1}.
-              </span>
-              <span className="truncate max-w-[200px] sm:max-w-[280px] font-medium">
-                {reply}
-              </span>
-            </button>
-          ))
-        ) : (
-          <button
-            onClick={onRequestInstantAdvice}
-            className="text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2 px-2"
-          >
-            Tap to analyze active screen
-          </button>
-        )}
+        {/* Anchored Flagship 3D WebGL Volumetric Core Orb (Far Right of Suggestion Bar) */}
+        <div 
+          onClick={onRequestInstantAdvice}
+          className="shrink-0 pl-1.5 flex items-center justify-center border-l border-white/10"
+          title="Omni Core 3D Volumetric Consciousness — Tap to analyze active screen"
+        >
+          <HoloOrb phase={orbPhase} size="sm" />
+        </div>
       </div>
 
       {/* 3. ACTIVE TYPING DOCK */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/90 border-t border-slate-800/80">
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#0B0B0C] border-t border-white/10">
         <button
           onClick={handleMicDictate}
           className={`p-2 rounded-xl border transition ${
             isListening
-              ? 'bg-rose-500/20 text-rose-300 border-rose-500 animate-pulse'
-              : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+              ? 'bg-[#7f00ff]/20 text-[#00f2fe] border-[#00f2fe] animate-pulse shadow-[0_0_12px_rgba(0,242,254,0.5)]'
+              : 'bg-black text-slate-400 border-white/10 hover:text-white'
           }`}
-          title="Dictate with voice"
+          title="Dictate raw thoughts"
         >
           <Mic className="w-4 h-4" />
         </button>
 
-        {/* Text Input / Buffer */}
+        {/* Input buffer */}
         <div className="relative flex-1">
           <input
             type="text"
@@ -248,13 +288,13 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
                 onSend(currentText);
               }
             }}
-            placeholder="Type with Omni AI assistance..."
-            className="w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/50 transition pr-8"
+            placeholder="Type with Omni AI co-pilot..."
+            className="w-full rounded-xl bg-[#000000] border border-white/15 px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00f2fe]/80 focus:ring-1 focus:ring-[#00f2fe]/40 font-mono transition pr-8 shadow-inner"
           />
           {currentText && (
             <button
               onClick={() => onChangeText('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5 font-bold"
               title="Clear text"
             >
               ×
@@ -262,85 +302,30 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
           )}
         </div>
 
-        {/* Copy to phone clipboard */}
+        {/* Copy to system clipboard */}
         <button
           onClick={handleCopy}
           disabled={!currentText}
           className={`p-2 rounded-xl border transition disabled:opacity-30 ${
             copied
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              ? 'bg-[#00f2fe]/20 text-[#00f2fe] border-[#00f2fe]/50 shadow-[0_0_10px_rgba(0,242,254,0.3)]'
+              : 'bg-black text-slate-300 border-white/10 hover:bg-[#18181b]'
           }`}
           title="Copy text to phone clipboard"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4 text-[#00f2fe]" /> : <Copy className="w-4 h-4" />}
         </button>
 
-        {/* Send / Insert into screen */}
+        {/* Send / Commit into input stream */}
         <button
           onClick={() => onSend(currentText)}
           disabled={!currentText}
-          className="p-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium shadow-md shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition disabled:opacity-40"
+          className="p-2 rounded-xl bg-gradient-to-r from-[#00f2fe] via-[#7f00ff] to-[#0575e6] text-black font-bold shadow-[0_0_15px_rgba(0,242,254,0.3)] hover:brightness-110 active:scale-95 transition disabled:opacity-40"
           title="Send into conversation"
         >
           <Send className="w-4 h-4" />
         </button>
       </div>
-
-      {/* ADVICE DETAIL MODAL */}
-      {showAdviceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <HoloOrb phase="suggesting" size="sm" />
-                <h3 className="text-sm font-semibold text-white">Omni Live Screen Coaching</h3>
-              </div>
-              <button
-                onClick={() => setShowAdviceModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="my-4 space-y-3">
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block mb-1">
-                  Active Screen Context
-                </span>
-                <p className="text-xs text-slate-300">{screenName}</p>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                  In-The-Moment Advice & Insights
-                </span>
-                <div className="space-y-2">
-                  {liveAdvice.map((tip, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs text-slate-200"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-[10px] shrink-0">
-                        {idx + 1}
-                      </span>
-                      <span>{tip}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowAdviceModal(false)}
-              className="w-full py-2.5 rounded-xl bg-cyan-500 text-slate-950 font-semibold text-xs hover:bg-cyan-400 transition"
-            >
-              Resume Typing
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

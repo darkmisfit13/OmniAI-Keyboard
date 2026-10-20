@@ -1,7 +1,10 @@
 /**
- * On-Device Mobile AI Engine (Low Latency, 100% Private Local Processing)
- * Optimized for mobile hardware execution via WebGPU, WebAssembly SIMD, and NPU.
+ * Dual-Lane On-Device Mobile AI Engine (DarkMisfitStudios "Nocturnal Cool" Matrix)
+ * Lane 1: Low-latency conversation prediction (Witty, Raw & Honest, Direct Action)
+ * Lane 2: Automated background note-taking ledger (Entities, Topics, Dates, Raw Emotions)
  */
+
+import { TelemetryNoteItem } from '../components/JarvisTelemetryHUD';
 
 export interface OnDeviceTelemetry {
   latencyMs: number;
@@ -11,18 +14,31 @@ export interface OnDeviceTelemetry {
   modelName: string;
 }
 
-export interface LocalAnalysisResult {
+export type OmniKeyTone = 
+  | 'flirty' 
+  | 'nocturnal_cool' 
+  | 'darkmisfit' 
+  | 'punchy' 
+  | 'executive' 
+  | 'grammar';
+
+export interface DualLaneAnalysisResult {
   summary: string;
-  intent: string;
+  counterpartDossier: string;
+  emotionalRegister: string;
   urgency: 'Low' | 'Medium' | 'High';
-  emotionalTone: string;
-  advice: string[];
+  suggestionTrio: {
+    witty: string;
+    rawHonest: string;
+    directAction: string;
+  };
   suggestedReplies: string[];
-  suggestedActions: string[];
+  tacticalAdvice: string[];
+  telemetryNotes: TelemetryNoteItem[];
   telemetry: OnDeviceTelemetry;
 }
 
-class LocalMobileNeuralEngine {
+class DualLaneNeuralEngine {
   private isInitialized = false;
   private hasWebGPU = false;
 
@@ -43,103 +59,235 @@ class LocalMobileNeuralEngine {
     const elapsed = Math.max(1, Math.round((performance.now() - startTime) * 10) / 10);
     return {
       latencyMs: elapsed,
-      memoryMb: 18.4,
+      memoryMb: 19.4,
       accelerator: this.hasWebGPU ? 'WebGPU (NPU/GPU)' : 'WASM SIMD',
       privacyStatus: 'Shielded (Zero Network Data)',
-      modelName: 'OmniNano-v3-MobileQuantized',
+      modelName: 'OmniKey-NocturnalCool-v4.2',
     };
   }
 
-  // On-device rapid screen context & intent parsing
-  async analyzeScreenLocally(screenText: string, currentDraft: string): Promise<LocalAnalysisResult> {
+  // Dual-Lane Viewport Cognition with Nocturnal Cool Persona
+  async processViewportCognition(
+    screenText: string,
+    currentDraft: string,
+    speaker = 'Participant'
+  ): Promise<DualLaneAnalysisResult> {
     const start = performance.now();
     await this.initialize();
 
     const lower = (screenText + ' ' + currentDraft).toLowerCase();
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     let urgency: 'Low' | 'Medium' | 'High' = 'Medium';
-    let emotionalTone = 'Neutral';
-    let intent = 'Information exchange';
-    const advice: string[] = [];
-    const suggestedReplies: string[] = [];
-    const suggestedActions: string[] = [];
+    let emotionalRegister = 'Stoic & Hyper-Confident';
+    let counterpartDossier = speaker;
+    const tacticalAdvice: string[] = [];
+    const telemetryNotes: TelemetryNoteItem[] = [];
 
-    // Local pattern matchers & mobile rule evaluation
-    if (lower.includes('urgent') || lower.includes('asap') || lower.includes('eta') || lower.includes('delay') || lower.includes('deadline')) {
+    // Default Nocturnal Cool suggestions: short, impactful, punchy syntax
+    let suggestionTrio = {
+      witty: 'Reading between the lines. Let’s not overcomplicate what we both know.',
+      rawHonest: 'I’d rather be upfront than pretend this isn’t pressing. Here is the unvarnished reality.',
+      directAction: 'Locking this down right now. You’ll have the confirmation shortly.',
+    };
+
+    // Scenario 1: Work / Technical Pressure
+    if (
+      lower.includes('slack') ||
+      lower.includes('alex') ||
+      lower.includes('staging') ||
+      lower.includes('eta') ||
+      lower.includes('delay') ||
+      lower.includes('deadline') ||
+      lower.includes('urgent')
+    ) {
       urgency = 'High';
-      emotionalTone = 'Time-Critical & Direct';
-      intent = 'Immediate delivery confirmation and status resolution';
-      advice.push('Keep reply under 15 words; lead with a specific timestamp.');
-      advice.push('Avoid excuses; state current progress and handoff ETA.');
-      suggestedReplies.push('Deploying right now; ETA is 15 minutes.');
-      suggestedReplies.push('On it. Reviewing final checks, live in 10 mins.');
-      suggestedReplies.push('Tracking the issue—will update this thread momentarily.');
-      suggestedActions.push('Send 15m ETA', 'Schedule sync reminder');
-    } else if (lower.includes('dispute') || lower.includes('refund') || lower.includes('charge') || lower.includes('invoice') || lower.includes('error')) {
+      counterpartDossier = 'Alex Rivera • VP Engineering';
+      emotionalRegister = 'High-Stakes Scrutiny • Needs Unflinching Milestone Certainty';
+
+      tacticalAdvice.push('State the exact cutoff first. In high-pressure rooms, hesitation looks like a breach.');
+      tacticalAdvice.push('Own the regression check calmly; no excuses, pure execution.');
+      tacticalAdvice.push('Deliver the milestone and let the code do the talking.');
+
+      suggestionTrio = {
+        witty: 'Staging compiles clean. Unless the datacenter melts, we are live at 11:00 AM.',
+        rawHonest: 'We paused to isolate an auth regression before the client demo. Patch is in, live in 15m.',
+        directAction: 'Regression suite passed locally. Pushing build #402 to staging in 15 minutes flat.',
+      };
+
+      telemetryNotes.push(
+        {
+          id: `note_${Date.now()}_1`,
+          category: 'Commitment',
+          label: 'Staging Cutoff (11:00 AM)',
+          detail: '15-minute deployment target pinned for client operations demonstration.',
+          timestamp: nowStr,
+        },
+        {
+          id: `note_${Date.now()}_2`,
+          category: 'Risk',
+          label: 'Executive Scrutiny',
+          detail: 'Alex under pressure from executive partners; expects zero spin.',
+          timestamp: nowStr,
+        }
+      );
+    } 
+    // Scenario 2: Financial Dispute / Commercial Tension
+    else if (
+      lower.includes('invoice') ||
+      lower.includes('sarah') ||
+      lower.includes('billing') ||
+      lower.includes('charge') ||
+      lower.includes('dispute') ||
+      lower.includes('$240')
+    ) {
       urgency = 'High';
-      emotionalTone = 'Anxious / Defensive';
-      intent = 'Financial clarification and conflict mitigation';
-      advice.push('Acknowledge their concern first to de-escalate emotional friction.');
-      advice.push('Commit to an audit investigation within the hour.');
-      suggestedReplies.push('Thanks for flagging this. Reviewing the line item right now to clarify or credit it.');
-      suggestedReplies.push('Understood. Inspecting the invoice ledger with our finance team immediately.');
-      suggestedReplies.push('Looking into this right away—no need to dispute, we will resolve it today.');
-      suggestedActions.push('Open Billing Ledger', 'De-escalate response');
-    } else if (lower.includes('dinner') || lower.includes('weekend') || lower.includes('meet') || lower.includes('coffee') || lower.includes('trip')) {
+      counterpartDossier = 'Sarah Jenkins • CFO, Apex Corp';
+      emotionalRegister = 'Commercial Skepticism • Needs Immediate Reassurance';
+
+      tacticalAdvice.push('Validate the friction immediately. Don’t quote policy when someone feels burned.');
+      tacticalAdvice.push('Remove the chargeback leverage by offering the audit proactively.');
+      tacticalAdvice.push('Maintain iron composure: fast, calm, resolute.');
+
+      suggestionTrio = {
+        witty: 'Nobody likes mystery math on an invoice. Pulling the itemized ledger right now to fix it.',
+        rawHonest: 'You trusted us with billing; a rogue charge breaks that. I am inspecting it right now to credit it.',
+        directAction: 'Hi Sarah, pulling invoice #8819 with our finance lead now. We will clarify or credit it today.',
+      };
+
+      telemetryNotes.push(
+        {
+          id: `note_${Date.now()}_1`,
+          category: 'Entity',
+          label: 'Invoice #8819 Dispute',
+          detail: '$240 charge under review for immediate same-day reconciliation.',
+          timestamp: nowStr,
+        },
+        {
+          id: `note_${Date.now()}_2`,
+          category: 'Risk',
+          label: 'Merchant Chargeback Warning',
+          detail: 'Counterpart requested explanation prior to formal dispute filing.',
+          timestamp: nowStr,
+        }
+      );
+    }
+    // Scenario 3: Social / Flirty / Intrigue
+    else if (
+      lower.includes('maya') ||
+      lower.includes('hinge') ||
+      lower.includes('dating') ||
+      lower.includes('food') ||
+      lower.includes('controversial') ||
+      lower.includes('flirt') ||
+      lower.includes('late')
+    ) {
       urgency = 'Low';
-      emotionalTone = 'Casual / Social';
-      intent = 'Social planning and scheduling alignment';
-      advice.push('Propose a definitive location or time to prevent endless back-and-forth.');
-      suggestedReplies.push('Count me in! Let’s meet at 7:30 PM.');
-      suggestedReplies.push('Works for me—locking it into my calendar now.');
-      suggestedReplies.push('Sounds great! Sending a pin to the spot.');
-      suggestedActions.push('Add to Google Calendar', 'Confirm 7:30 PM');
-    } else {
+      counterpartDossier = 'Maya Lin • Unfiltered Connection';
+      emotionalRegister = 'Intrigue & Late-Night Magnetism';
+
+      tacticalAdvice.push('Reject boilerplate small talk. Be magnetic, effortlessly confident, and teasing.');
+      tacticalAdvice.push('Leave a conversational hook that begs for an opinionated retort.');
+
+      suggestionTrio = {
+        witty: 'Cold takeout standing in the refrigerator light at 1 AM hits different. Fight me on it.',
+        rawHonest: 'Cereal is technically cold soup, and brunch is just an excuse to charge $28 for eggs.',
+        directAction: 'I put hot honey on literally everything. Tell me your worst food sin so I can judge accordingly.',
+      };
+
+      telemetryNotes.push(
+        {
+          id: `note_${Date.now()}_1`,
+          category: 'Topic',
+          label: 'Banter Anchor: Midnight Rules',
+          detail: 'Counterpart testing authenticity; banned boring culinary clichés.',
+          timestamp: nowStr,
+        }
+      );
+    }
+    // General Nocturnal Cool
+    else {
       urgency = 'Medium';
-      emotionalTone = 'Collaborative';
-      intent = 'Ongoing dialogue';
-      advice.push('Match the counterpart’s message pacing.');
-      advice.push('Confirm completion with clear next steps.');
-      suggestedReplies.push('Got it, working on this now.');
-      suggestedReplies.push('Understood! Will have an update shortly.');
-      suggestedReplies.push('Thanks for the note—reviewing right away.');
-      suggestedActions.push('Send quick ack', 'Save note');
+      counterpartDossier = speaker || 'Active Counterpart';
+      emotionalRegister = 'Stoic, Minimalistic & Sharp';
+
+      tacticalAdvice.push('Strip out corporate fluff. Say it in one sentence.');
+      tacticalAdvice.push('Stay cool, calculated, and proactive.');
+
+      suggestionTrio = {
+        witty: 'Short answer: yes. Long answer: absolutely, let’s make it happen.',
+        rawHonest: 'Let’s be real about where this stands so we don’t waste time on friction.',
+        directAction: 'Understood. Reviewing the specs now and executing immediately.',
+      };
+
+      telemetryNotes.push(
+        {
+          id: `note_${Date.now()}_1`,
+          category: 'Topic',
+          label: 'Viewport Stream',
+          detail: screenText ? screenText.slice(0, 85) : 'Active conversation cognition',
+          timestamp: nowStr,
+        }
+      );
     }
 
+    const suggestedReplies = [
+      suggestionTrio.witty,
+      suggestionTrio.rawHonest,
+      suggestionTrio.directAction,
+    ];
+
     return {
-      summary: screenText ? `Locally parsed screen context: "${screenText.slice(0, 80)}..."` : 'Active mobile screen context',
-      intent,
+      summary: screenText ? `Screen context: "${screenText.slice(0, 70)}..."` : 'Active mobile viewport',
+      counterpartDossier,
+      emotionalRegister,
       urgency,
-      emotionalTone,
-      advice,
+      suggestionTrio,
       suggestedReplies,
-      suggestedActions,
+      tacticalAdvice,
+      telemetryNotes,
       telemetry: this.getTelemetry(start),
     };
   }
 
-  // On-device rapid tone rewriter
-  async rewriteLocally(text: string, tone: 'professional' | 'punchy' | 'diplomatic' | 'flirty' | 'grammar'): Promise<{ rewritten: string; telemetry: OnDeviceTelemetry }> {
+  // Nocturnal Cool Tone Matrix Rewriter
+  async rewriteLocally(
+    text: string,
+    tone: OmniKeyTone
+  ): Promise<{ rewritten: string; telemetry: OnDeviceTelemetry }> {
     const start = performance.now();
     await this.initialize();
-
     const clean = text.trim();
     let rewritten = clean;
 
     switch (tone) {
-      case 'professional':
-        rewritten = `Thank you for your message. ${clean}. Please let me know if any further details are required.`;
-        break;
-      case 'punchy':
-        rewritten = `${clean} — taking care of it now.`;
-        break;
-      case 'diplomatic':
-        rewritten = `I appreciate you highlighting this. ${clean}. Let’s coordinate on the best path forward.`;
-        break;
       case 'flirty':
-        rewritten = `${clean} 😉✨`;
+        // Magnetic, nocturnal charm, playful confidence
+        rewritten = `${clean} — you ask dangerous questions after midnight. Keep going.`;
         break;
+
+      case 'nocturnal_cool':
+        // Stoic, minimalistic, effortlessly sharp, low-frequency cool
+        rewritten = `Heard you loud and clear. ${clean}. We handle it now—zero noise.`;
+        break;
+
+      case 'darkmisfit':
+        // Raw, unfiltered honesty, zero sugar-coating
+        rewritten = `Let’s strip away the pleasantries. ${clean} That’s the reality of where we stand.`;
+        break;
+
+      case 'executive':
+        // Executive iron, commanding respect without fluff
+        rewritten = `Understood. ${clean}. The milestone is locked and moving forward.`;
+        break;
+
+      case 'punchy':
+        // Ultra-direct, high-impact
+        rewritten = `${clean} — moving forward immediately.`;
+        break;
+
       case 'grammar':
+        // Fix typos while keeping raw personal voice
         rewritten = clean.charAt(0).toUpperCase() + clean.slice(1) + (clean.endsWith('.') ? '' : '.');
         break;
     }
@@ -149,27 +297,6 @@ class LocalMobileNeuralEngine {
       telemetry: this.getTelemetry(start),
     };
   }
-
-  // On-device privacy scanner: scrubs passwords, tokens, API keys before network sharing
-  scrubSensitiveData(text: string): { cleanText: string; scrubbedCount: number } {
-    let scrubbedCount = 0;
-    // Redact password patterns, emails, credit card formats, JWT tokens
-    const scrubbed = text
-      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b/g, () => {
-        scrubbedCount++;
-        return '[EMAIL_REDACTED]';
-      })
-      .replace(/\b(?:\d{4}[ -]?){3}\d{4}\b/g, () => {
-        scrubbedCount++;
-        return '[CARD_REDACTED]';
-      })
-      .replace(/(?:password|secret|token|api_key|bearer)\s*[:=]\s*\S+/gi, () => {
-        scrubbedCount++;
-        return '[SECRET_REDACTED]';
-      });
-
-    return { cleanText: scrubbed, scrubbedCount };
-  }
 }
 
-export const onDeviceAI = new LocalMobileNeuralEngine();
+export const onDeviceAI = new DualLaneNeuralEngine();

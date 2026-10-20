@@ -7,11 +7,11 @@ import {
   Share2, 
   Sliders, 
   Volume2, 
-  Vibrate, 
   Cpu, 
   Zap,
+  Activity,
   CheckCircle2,
-  HelpCircle
+  Lock
 } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -21,21 +21,21 @@ interface MobileSetupGuideProps {
 
 export const MobileSetupGuide: React.FC<MobileSetupGuideProps> = ({ onTestKeyboard }) => {
   return (
-    <div className="flex flex-col h-full overflow-y-auto p-4 space-y-4 text-slate-100">
+    <div className="flex flex-col h-full overflow-y-auto p-4 space-y-4 text-slate-100 bg-[#000000] font-mono">
       {/* 1. APP INSTALLATION HERO */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/60 border border-slate-800 shadow-2xl space-y-3">
+      <div className="p-5 rounded-2xl bg-[#0B0B0C] border border-[#00f2fe]/40 shadow-[0_0_35px_rgba(0,242,254,0.2)] space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <Smartphone className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-black border border-[#00f2fe]/60 flex items-center justify-center shadow-[0_0_15px_rgba(0,242,254,0.3)]">
+            <Smartphone className="w-6 h-6 text-[#00f2fe]" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Turn into a Phone App</h2>
-            <p className="text-xs text-slate-400">Install as a standalone home screen app</p>
+            <h2 className="text-sm font-bold text-white tracking-wide">SYSTEM CO-PILOT DEPLOYMENT</h2>
+            <p className="text-[10px] text-slate-400">Install as standalone native mobile app (PWA)</p>
           </div>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Omni Keyboard AI is built as a Progressive Web App (PWA). When installed, it runs without browser url bars, works offline, and operates at native 60fps.
+        <p className="text-xs text-slate-300 leading-relaxed text-[11px]">
+          Runs with zero browser headers at 60fps on mobile hardware, utilizing WebGPU and NPU acceleration for instant sub-10ms viewport perception.
         </p>
 
         <div className="pt-2">
@@ -43,90 +43,79 @@ export const MobileSetupGuide: React.FC<MobileSetupGuideProps> = ({ onTestKeyboa
         </div>
       </div>
 
-      {/* 2. HOW KEYBOARD AI SEES YOUR SCREEN */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+      {/* 2. DUAL-LANE COGNITION ARCHITECTURE */}
+      <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 space-y-3">
         <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-cyan-400" />
-          <h3 className="text-sm font-semibold text-white">How Screen Vision Works</h3>
+          <Activity className="w-4 h-4 text-[#00f2fe]" />
+          <h3 className="text-xs font-bold text-white tracking-wider">DUAL-LANE PIPELINE SPECIFICATION</h3>
         </div>
 
-        <div className="space-y-2.5 text-xs text-slate-300">
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
-            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-              1
+        <div className="space-y-2 text-xs text-slate-300">
+          <div className="p-2.5 rounded-xl bg-black/80 border border-white/5 space-y-1">
+            <span className="text-[10px] font-bold text-[#00f2fe] flex items-center gap-1.5">
+              <Zap className="w-3 h-3" /> Lane 1: Low-Latency Conversation Stream
             </span>
-            <div>
-              <strong className="text-slate-100 block">Live Screen Perception</strong>
-              Tap "Live Screen" or "Share My Screen" to let Gemini 3.8 Flash read the active window, Slack discussion, email, or chat conversation in real-time.
-            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Computes 3 predictive response tiers directly above the keyboard layout row (Witty, Raw & Honest, Direct Action), allowing 1-tap population.
+            </p>
           </div>
 
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
-            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-              2
+          <div className="p-2.5 rounded-xl bg-black/80 border border-white/5 space-y-1">
+            <span className="text-[10px] font-bold text-[#7f00ff] flex items-center gap-1.5">
+              <ShieldCheck className="w-3 h-3" /> Lane 2: Automated Background Ledger
             </span>
-            <div>
-              <strong className="text-slate-100 block">Keyboard Ribbon Sits Above Your Typing</strong>
-              The Omni AI bar sits right above the keyboard, constantly displaying live coaching insights and 3 tactical one-tap reply pills.
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
-            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-              3
-            </span>
-            <div>
-              <strong className="text-slate-100 block">One-Tap Copy to Any App</strong>
-              Tap any suggestion or use the Copy icon to paste immediately into your native WhatsApp, iMessage, Slack, or Instagram apps.
-            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Silently parses ongoing conversation streams for counterparty entities, dates, deadlines, and emotional subtext, accessible via the Jarvis Telemetry HUD.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 3. STEP-BY-STEP PHONE PLATFORM GUIDES */}
+      {/* 3. STEP-BY-STEP PHONE EXTENSION GUIDES */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* iOS Setup */}
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5">
+        <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 space-y-2">
           <span className="text-xs font-bold text-white flex items-center gap-1.5">
-            🍎 iOS (iPhone / iPad) Setup
+            🍎 Apple iOS Setup
           </span>
-          <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside leading-relaxed">
+          <ol className="text-[11px] text-slate-400 space-y-1.5 list-decimal list-inside leading-relaxed">
             <li>Open this URL in <strong>Safari</strong></li>
-            <li>Tap the <strong>Share</strong> button at bottom</li>
-            <li>Select <strong>Add to Home Screen</strong></li>
-            <li>Launch from Home Screen for full immersion</li>
-            <li>On iPad, run in <strong>Slide Over</strong> or <strong>Split View</strong> alongside messages</li>
+            <li>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></li>
+            <li>Enable keyboard extension in <strong>Settings → Keyboards</strong></li>
+            <li>Toggle <strong>Allow Full Access</strong> for live viewport perception</li>
           </ol>
         </div>
 
         {/* Android Setup */}
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5">
+        <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 space-y-2">
           <span className="text-xs font-bold text-white flex items-center gap-1.5">
             🤖 Android Setup
           </span>
-          <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside leading-relaxed">
-            <li>Open in <strong>Chrome</strong> or your browser</li>
-            <li>Tap <strong>Install App</strong> in the prompt</li>
-            <li>Or tap the 3 dots <strong>(⋮) → Install App</strong></li>
-            <li>Supports <strong>Pop-up View</strong> / <strong>Floating Window</strong> for system-wide multitasking</li>
+          <ol className="text-[11px] text-slate-400 space-y-1.5 list-decimal list-inside leading-relaxed">
+            <li>Open in <strong>Chrome</strong> and tap <strong>Install App</strong></li>
+            <li>Activate in <strong>Settings → System → Languages & Input</strong></li>
+            <li>Grant <strong>Accessibility Service</strong> for viewport awareness</li>
+            <li>Supports system-wide floating window multitasking</li>
           </ol>
         </div>
       </div>
 
-      {/* 4. PRIVACY & SECURITY NOTE */}
-      <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-200">
-        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+      {/* 4. PRIVACY SHIELD */}
+      <div className="p-3.5 rounded-2xl bg-black border border-[#00f2fe]/30 flex items-start gap-2.5 text-xs text-slate-300">
+        <Lock className="w-4 h-4 text-[#00f2fe] shrink-0 mt-0.5" />
         <div>
-          <strong className="text-emerald-100 block">Privacy Preserving Architecture</strong>
-          All screen frames and keyboard drafts are securely processed via server-side proxy directly with Google GenAI. No keylogging is ever stored or tracked.
+          <strong className="text-white block text-[11px]">Zero Data Leakage Register</strong>
+          <span className="text-[10px] text-slate-400 leading-relaxed">
+            All token transformations and PII scrubbing execute on the local Neural Processing Unit (NPU).
+          </span>
         </div>
       </div>
 
       <button
         onClick={onTestKeyboard}
-        className="w-full py-3 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 shadow-lg shadow-cyan-500/20 transition active:scale-98"
+        className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00f2fe] via-[#7f00ff] to-[#0575e6] text-black font-bold text-xs shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:brightness-110 transition active:scale-98"
       >
-        Open Keyboard AI & Test Live Screen Now
+        Launch Volumetric 3D Keyboard
       </button>
     </div>
   );

@@ -4,19 +4,15 @@ import {
   Eye, 
   Sparkles, 
   Smartphone, 
-  Settings, 
-  Layers, 
   Wifi, 
   Battery, 
-  Sliders, 
   Maximize2, 
-  Minimize2,
-  Tv,
-  CheckCircle,
-  HelpCircle,
+  FolderOpen, 
+  Code,
+  Activity,
+  Layers,
   Cpu,
-  FolderOpen,
-  Code
+  Laptop
 } from 'lucide-react';
 import { HoloOrb, OrbPhase } from './components/HoloOrb';
 import { AIKeyboardBar } from './components/AIKeyboardBar';
@@ -29,13 +25,16 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { WorkspaceHub } from './components/WorkspaceHub';
 import { KeyboardExtensionBridge } from './components/KeyboardExtensionBridge';
-import { onDeviceAI } from './lib/onDeviceAI';
+import { DesktopSyncBridge } from './components/DesktopSyncBridge';
+import { DesktopFloatingWidget } from './components/DesktopFloatingWidget';
+import { JarvisTelemetryHUD, TelemetryNoteItem } from './components/JarvisTelemetryHUD';
+import { onDeviceAI, DualLaneAnalysisResult } from './lib/onDeviceAI';
 import { auth, testFirestoreConnection } from './lib/firebase';
 import { User } from 'firebase/auth';
 
 export default function App() {
-  // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'workspace' | 'extension' | 'setup'>('keyboard');
+  const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'workspace' | 'extension' | 'studios' | 'sync' | 'setup'>('keyboard');
+  const [isDesktopOverlayActive, setIsDesktopOverlayActive] = useState(false);
 
   // Active typing text
   const [currentDraftText, setCurrentDraftText] = useState<string>(PRESET_SCENARIOS[0].defaultDraft);
@@ -44,7 +43,7 @@ export default function App() {
   const [currentScenario, setCurrentScenario] = useState<ScreenScenario>(PRESET_SCENARIOS[0]);
   const [customScreenshot, setCustomScreenshot] = useState<string | null>(null);
 
-  // Live Screen Sharing stream (real display media)
+  // Live Screen Sharing stream
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
 
@@ -56,29 +55,67 @@ export default function App() {
 
   // On-Device AI Mode vs Cloud Mode
   const [isOnDeviceMode, setIsOnDeviceMode] = useState(true);
-  const [localLatencyMs, setLocalLatencyMs] = useState(7.8);
+  const [localLatencyMs, setLocalLatencyMs] = useState(6.4);
+
+  // Jarvis Telemetry HUD state
+  const [isTelemetryHUDOpen, setIsTelemetryHUDOpen] = useState(false);
 
   // Current Firebase Auth User
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
 
-  // AI analysis state
+  // Dual-Lane AI analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [orbPhase, setOrbPhase] = useState<OrbPhase>('idle');
-  const [analysisData, setAnalysisData] = useState<any>({
-    summary: 'Alex Rivera (VP Eng) is asking for an immediate ETA on the staging build #402 deployment.',
-    intent: 'Urgent status update needed to report to executive client stakeholders.',
+  const [analysisData, setAnalysisData] = useState<DualLaneAnalysisResult>({
+    summary: 'Alex Rivera (VP Eng) is demanding an unvarnished ETA on the staging build #402 deployment.',
+    counterpartDossier: 'Alex Rivera • VP Engineering • #product-launch',
+    emotionalRegister: 'High-Stakes Pressure & Zero-Fluff Accountability',
     urgency: 'High',
-    emotionalTone: 'Anxious / High-Pressure',
-    advice: [
-      'State your exact ETA in the very first sentence.',
-      'Confirm the auth fix is being regression-tested without making open-ended excuses.',
-      'Commit to pinging the channel immediately upon deployment.'
-    ],
+    suggestionTrio: {
+      witty: 'Code is compiling—unless the server catches fire, staging is live at 11:00 AM.',
+      rawHonest: 'The delay was on our auth regression check. We caught the flaw before client demo, pushing in 15m.',
+      directAction: 'Fix is verified locally; regression test passing. Pushing build #402 to staging in 15 minutes.',
+    },
     suggestedReplies: [
-      'Patch is tested locally, wrapping up regression checks and pushing to staging in 15 mins.',
-      'On it—deploying the auth fix now. You will have staging live by 11:00 AM sharp.',
-      'Verified the token fix; deploying build to staging right now.'
+      'Code is compiling—unless the server catches fire, staging is live at 11:00 AM.',
+      'The delay was on our auth regression check. We caught the flaw before client demo, pushing in 15m.',
+      'Fix is verified locally; regression test passing. Pushing build #402 to staging in 15 minutes.',
     ],
+    tacticalAdvice: [
+      'Lead with the exact timestamp. Under extreme pressure, adjectives look like excuses.',
+      'Acknowledge the client visibility risk without getting defensive.',
+      'Commit to immediate channel confirmation the second artifacts hit staging.'
+    ],
+    telemetryNotes: [
+      {
+        id: 'init_note_1',
+        category: 'Commitment',
+        label: 'Build #402 Staging Target',
+        detail: 'Commitment to deliver staging deploy within 15 minutes (11:00 AM hard cutoff).',
+        timestamp: '10:42 AM',
+      },
+      {
+        id: 'init_note_2',
+        category: 'Risk',
+        label: 'Client Executive Escalation',
+        detail: 'VP of client operations is actively pinging engineering leadership.',
+        timestamp: '10:42 AM',
+      },
+      {
+        id: 'init_note_3',
+        category: 'Emotion',
+        label: 'Executive Urgency',
+        detail: 'Uncompromising tone; demands unambiguous milestone certainty.',
+        timestamp: '10:42 AM',
+      }
+    ],
+    telemetry: {
+      latencyMs: 6.4,
+      memoryMb: 19.2,
+      accelerator: 'WebGPU (NPU/GPU)',
+      privacyStatus: 'Shielded (Zero Network Data)',
+      modelName: 'OmniWave-DualLane-v4',
+    }
   });
 
   // Clock in status bar
@@ -128,65 +165,31 @@ export default function App() {
     }
   }, [stream]);
 
-  // Trigger Screen Analysis (On-Device Local Model vs Cloud Vision)
+  // Trigger Dual-Lane Viewport Cognition
   const analyzeActiveScreen = useCallback(async (customPrompt?: string) => {
     setIsAnalyzing(true);
     setOrbPhase('analyzing');
 
     const screenContextText = `${currentScenario.name} - ${currentScenario.category} (${currentScenario.messages.map(m => m.text).join(' ')})`;
+    const speaker = currentScenario.appHeader.title;
 
-    // ON-DEVICE MODE (Sub-15ms, Private, 100% Local Mobile Execution)
-    if (isOnDeviceMode) {
-      try {
-        const localResult = await onDeviceAI.analyzeScreenLocally(screenContextText, currentDraftText);
-        setAnalysisData(localResult);
-        setLocalLatencyMs(localResult.telemetry.latencyMs);
-        setOrbPhase('suggesting');
-      } finally {
-        setIsAnalyzing(false);
-      }
-      return;
-    }
-
-    // CLOUD MODE (Gemini 3.8 Flash Vision)
+    // Dual-Lane On-Device Execution (Sub-10ms, Private)
     try {
-      let imageBase64: string | null = customScreenshot;
-      if (!imageBase64 && stream) {
-        imageBase64 = captureStreamFrame();
-      }
-
-      const res = await fetch('/api/screen-analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64,
-          currentInput: currentDraftText,
-          screenScenario: isStreaming
-            ? 'Live Desktop/Phone Window'
-            : customScreenshot
-            ? 'Uploaded Mobile Screen'
-            : screenContextText,
-          customPrompt,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.analysis) {
-        setAnalysisData(data.analysis);
-        setOrbPhase('suggesting');
-      } else {
-        setOrbPhase('idle');
-      }
-    } catch (err) {
-      console.error('Failed to analyze screen:', err);
-      // Fallback to local on-device processing
-      const localResult = await onDeviceAI.analyzeScreenLocally(screenContextText, currentDraftText);
-      setAnalysisData(localResult);
+      const result = await onDeviceAI.processViewportCognition(
+        screenContextText,
+        currentDraftText,
+        speaker
+      );
+      setAnalysisData(result);
+      setLocalLatencyMs(result.telemetry.latencyMs);
       setOrbPhase('suggesting');
+    } catch (err) {
+      console.error('Cognition failed:', err);
+      setOrbPhase('idle');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isOnDeviceMode, customScreenshot, stream, captureStreamFrame, currentDraftText, isStreaming, currentScenario]);
+  }, [currentScenario, currentDraftText]);
 
   // Handle switching scenario
   const handleSelectScenario = (scenario: ScreenScenario) => {
@@ -195,7 +198,7 @@ export default function App() {
     setOrbPhase('observing');
     setTimeout(() => {
       analyzeActiveScreen();
-    }, 200);
+    }, 180);
   };
 
   // Handle uploading custom screenshot
@@ -207,7 +210,7 @@ export default function App() {
       setOrbPhase('observing');
       setTimeout(() => {
         analyzeActiveScreen();
-      }, 300);
+      }, 250);
     };
     reader.readAsDataURL(file);
   };
@@ -224,7 +227,7 @@ export default function App() {
     } else {
       try {
         if (!navigator.mediaDevices?.getDisplayMedia) {
-          alert('Screen capture API is not supported on this browser/platform. You can still upload any screenshot of your screen.');
+          alert('Screen capture API is not supported on this browser/platform. You can still upload screenshots.');
           return;
         }
 
@@ -245,7 +248,7 @@ export default function App() {
 
         setTimeout(() => {
           analyzeActiveScreen();
-        }, 1000);
+        }, 900);
       } catch (err) {
         console.warn('Screen share canceled or denied:', err);
         setIsStreaming(false);
@@ -253,45 +256,20 @@ export default function App() {
     }
   };
 
-  // Rewrite current text with target tone (Local vs Cloud)
+  // Rewrite current text with target tone
   const handleRewrite = async (style: string) => {
     if (!currentDraftText.trim()) return;
     setIsAnalyzing(true);
     setOrbPhase('typing');
 
-    if (isOnDeviceMode) {
-      try {
-        const { rewritten, telemetry } = await onDeviceAI.rewriteLocally(
-          currentDraftText,
-          style as any
-        );
-        setCurrentDraftText(rewritten);
-        setLocalLatencyMs(telemetry.latencyMs);
-        setOrbPhase('suggesting');
-      } finally {
-        setIsAnalyzing(false);
-      }
-      return;
-    }
-
     try {
-      const res = await fetch('/api/keyboard-rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: currentDraftText,
-          style,
-          screenContext: isStreaming ? 'Live Screen' : currentScenario.name,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.rewritten) {
-        setCurrentDraftText(data.rewritten);
-        setOrbPhase('suggesting');
-      }
-    } catch (err) {
-      console.error('Rewrite failed:', err);
+      const { rewritten, telemetry } = await onDeviceAI.rewriteLocally(
+        currentDraftText,
+        style as any
+      );
+      setCurrentDraftText(rewritten);
+      setLocalLatencyMs(telemetry.latencyMs);
+      setOrbPhase('suggesting');
     } finally {
       setIsAnalyzing(false);
     }
@@ -315,7 +293,6 @@ export default function App() {
     const final = text || currentDraftText;
     if (!final.trim()) return;
 
-    // Simulate sending into current scenario
     currentScenario.messages.push({
       sender: 'me',
       text: final,
@@ -326,10 +303,9 @@ export default function App() {
 
     setTimeout(() => {
       analyzeActiveScreen();
-    }, 1000);
+    }, 900);
   };
 
-  // Inspect email or note in screen simulator
   const handleLoadIntoScreenSimulator = (title: string, body: string, sender: string) => {
     const customScenario: ScreenScenario = {
       id: `screen_${Date.now()}`,
@@ -340,6 +316,7 @@ export default function App() {
         title: sender,
         subtitle: title,
         avatar: '✉️',
+        badge: 'WORKSPACE',
       },
       messages: [
         {
@@ -348,7 +325,7 @@ export default function App() {
           time: 'Just now',
         },
       ],
-      contextHint: `Context from ${title}. Inspecting live dialogue in keyboard vision.`,
+      contextHint: `Real-time context from ${title}. Inspecting live dialogue.`,
       defaultDraft: '',
     };
     setCurrentScenario(customScenario);
@@ -356,7 +333,7 @@ export default function App() {
     setOrbPhase('observing');
     setTimeout(() => {
       analyzeActiveScreen();
-    }, 300);
+    }, 250);
   };
 
   const activeScreenName = isStreaming
@@ -366,24 +343,40 @@ export default function App() {
     : currentScenario.name;
 
   return (
-    <div className="min-h-screen bg-[#06080e] text-slate-100 flex flex-col items-center justify-center p-0 sm:p-4 select-none">
-      {/* OFFLINE INDICATOR FROM PWA SKILL */}
+    <div className="min-h-screen bg-[#000000] text-slate-100 flex flex-col items-center justify-center p-0 sm:p-4 select-none">
       <OfflineIndicator />
 
-      {/* TOP DESKTOP CONTROLS BAR (Shown when previewing on desktop) */}
-      <div className="w-full max-w-md hidden sm:flex items-center justify-between mb-3 px-2 text-xs text-slate-400">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-semibold text-slate-300">Omni Keyboard AI</span>
-          <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 border border-cyan-800 text-cyan-400">
-            {isOnDeviceMode ? 'On-Device NPU' : 'Cloud Gemini'}
+      {/* TOP DESKTOP CONTROLS BAR (Desktop only) */}
+      <div className="w-full max-w-md hidden sm:flex items-center justify-between mb-2.5 px-2 text-xs font-mono text-slate-400">
+        <div className="flex flex-col text-left">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#00f2fe] animate-pulse shadow-[0_0_8px_#00f2fe]" />
+            <span className="font-bold text-white tracking-wider text-xs">OMNI KEY</span>
+            <span className="px-1.5 py-0.5 rounded text-[8px] bg-[#00f2fe]/10 border border-[#00f2fe]/30 text-[#00f2fe]">
+              PC Sync (⌘⇧K)
+            </span>
+          </div>
+          <span className="text-[8.5px] font-mono text-slate-400 tracking-wider">
+            Dark Misfit Studios
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono transition ${
+              isDesktopOverlayActive
+                ? 'bg-[#00f2fe] text-black border-[#00f2fe] font-bold shadow-[0_0_12px_rgba(0,242,254,0.4)]'
+                : 'bg-[#0B0B0C] border-white/10 hover:border-[#00f2fe]/40 text-slate-300 hover:text-white'
+            }`}
+            title="Launch Floating Laptop Co-Pilot Overlay (⌘+Shift+K)"
+          >
+            <Laptop className="w-3.5 h-3.5" />
+            <span>{isDesktopOverlayActive ? 'Dock Active' : 'PC Overlay'}</span>
+          </button>
+          <button
             onClick={() => setPhoneFrameMode(!phoneFrameMode)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:text-white transition"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 hover:border-[#00f2fe]/40 text-slate-300 hover:text-white transition"
             title="Toggle between phone bezel and full view"
           >
             {phoneFrameMode ? <Maximize2 className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
@@ -393,58 +386,66 @@ export default function App() {
         </div>
       </div>
 
-      {/* MAIN PHONE CONTAINER */}
+      {/* MAIN PHONE CONTAINER - Pure Matte Black (#000000) Foundation */}
       <div
-        className={`w-full flex flex-col bg-[#090b12] overflow-hidden transition-all duration-300 ${
+        className={`w-full flex flex-col bg-[#000000] overflow-hidden transition-all duration-300 ${
           phoneFrameMode
-            ? 'sm:max-w-[420px] sm:h-[840px] sm:rounded-[44px] sm:border-[8px] sm:border-slate-800/90 sm:shadow-[0_0_60px_rgba(0,242,254,0.15)] sm:ring-1 sm:ring-cyan-500/30'
-            : 'max-w-2xl h-screen rounded-none sm:rounded-2xl border-0 sm:border sm:border-slate-800'
+            ? 'sm:max-w-[420px] sm:h-[840px] sm:rounded-[44px] sm:border-[8px] sm:border-[#0B0B0C] sm:shadow-[0_0_80px_rgba(0,242,254,0.18),0_0_120px_rgba(127,0,255,0.15)] sm:ring-1 sm:ring-[#00f2fe]/40'
+            : 'max-w-2xl h-screen rounded-none sm:rounded-2xl border-0 sm:border sm:border-white/10'
         } relative h-[100dvh]`}
       >
         {/* 1. NATIVE MOBILE STATUS BAR & HARDWARE NOTCH */}
-        <div className="pt-2 px-6 pb-1 flex items-center justify-between bg-slate-950/80 backdrop-blur-md text-[11px] font-semibold text-slate-300 shrink-0 z-30">
+        <div className="pt-2 px-6 pb-1 flex items-center justify-between bg-[#000000] text-[11px] font-mono font-semibold text-slate-400 shrink-0 z-30">
           <span>{currentTime}</span>
 
-          {/* Dynamic Island / Camera Notch */}
-          <div className="w-24 h-4 bg-black rounded-full flex items-center justify-center gap-2 border border-slate-800/60 shadow-inner px-2">
-            <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-700" />
-            <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500/70'}`} />
+          {/* Dynamic Island / Hardware Notch */}
+          <div className="w-24 h-4 bg-[#0B0B0C] rounded-full flex items-center justify-center gap-2 border border-white/10 shadow-inner px-2">
+            <div className="w-2 h-2 rounded-full bg-black border border-slate-700" />
+            <div className={`w-1.5 h-1.5 rounded-full ${isStreaming ? 'bg-[#00f2fe] animate-pulse' : 'bg-[#7f00ff]'}`} />
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <Wifi className="w-3 h-3 text-slate-400" />
-            <Battery className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Wifi className="w-3 h-3 text-[#00f2fe]" />
+            <Battery className="w-3.5 h-3.5 text-slate-300" />
           </div>
         </div>
 
         {/* 2. APP HEADER & PWA INSTALL BADGE */}
-        <header className="px-4 py-2 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
+        <header className="px-4 py-2 bg-[#0B0B0C] border-b border-white/10 flex items-center justify-between shrink-0 z-20">
           <div className="flex items-center gap-2.5">
             <HoloOrb phase={orbPhase} size="sm" onClick={() => analyzeActiveScreen()} />
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xs font-bold tracking-tight text-white">OmniKey AI</h1>
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+            <div className="flex flex-col text-left">
+              <div className="flex items-center gap-1.5 leading-none">
+                <h1 className="text-xs font-bold tracking-wider font-mono text-white">
+                  OMNI <span className="text-[#00f2fe]">KEY</span>
+                </h1>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-ping" />
               </div>
-              <span className="text-[10px] text-cyan-400/90 font-mono block leading-none">
-                {isOnDeviceMode ? `⚡ On-Device (${localLatencyMs}ms)` : '☁️ Cloud Vision'}
+              <span className="text-[8.5px] font-mono tracking-wider text-slate-400 mt-0.5">
+                Dark Misfit Studios
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* On-Device Mode Toggle */}
+          <div className="flex items-center gap-1.5">
+            {/* Quick PC Overlay Toggle */}
             <button
-              onClick={() => setIsOnDeviceMode(!isOnDeviceMode)}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition border ${
-                isOnDeviceMode
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/20'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-              title="Toggle On-Device Local Processing vs Cloud Gemini"
+              onClick={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#7f00ff]/15 border border-[#7f00ff]/40 text-[#c084fc] hover:bg-[#7f00ff]/25 transition"
+              title="Launch Floating Laptop Co-Pilot Overlay"
             >
-              <Cpu className="w-3 h-3 text-emerald-400" />
-              <span>{isOnDeviceMode ? 'Local AI' : 'Cloud AI'}</span>
+              <Laptop className="w-3 h-3" />
+              <span>PC</span>
+            </button>
+
+            {/* Quick HUD Button */}
+            <button
+              onClick={() => setIsTelemetryHUDOpen(!isTelemetryHUDOpen)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold bg-[#00f2fe]/10 border border-[#00f2fe]/40 text-[#00f2fe] shadow-[0_0_10px_rgba(0,242,254,0.2)] hover:bg-[#00f2fe]/20 transition"
+              title="Toggle Jarvis Telemetry HUD"
+            >
+              <Activity className="w-3 h-3" />
+              <span>HUD</span>
             </button>
 
             <PWAInstallButton variant="compact" />
@@ -452,10 +453,23 @@ export default function App() {
         </header>
 
         {/* 3. MAIN TAB CONTENT AREA */}
-        <main className="flex-1 overflow-hidden relative flex flex-col">
+        <main className="flex-1 overflow-hidden relative flex flex-col bg-[#000000]">
+          {/* SLIDE-UP JARVIS TELEMETRY HUD CARD */}
+          <JarvisTelemetryHUD
+            isOpen={isTelemetryHUDOpen}
+            onClose={() => setIsTelemetryHUDOpen(false)}
+            activeScreenTitle={activeScreenName}
+            detectedSpeaker={analysisData.counterpartDossier}
+            emotionalRegister={analysisData.emotionalRegister}
+            telemetryNotes={analysisData.telemetryNotes}
+            latencyMs={localLatencyMs}
+            npuAccelerator={analysisData.telemetry.accelerator}
+            onClearNotes={() => setAnalysisData(prev => ({ ...prev, telemetryNotes: [] }))}
+          />
+
           {activeTab === 'keyboard' && (
             <div className="flex flex-col h-full justify-between overflow-hidden">
-              {/* Screen being observed */}
+              {/* Host viewport display */}
               <div className="flex-1 overflow-hidden p-2">
                 <SimulatedAppView
                   currentScenario={currentScenario}
@@ -469,14 +483,15 @@ export default function App() {
                 />
               </div>
 
-              {/* Keyboard AI Bar + Soft Keyboard */}
+              {/* Keyboard AI Bar + Volumetric 3D Soft Keyboard */}
               <div className="shrink-0 flex flex-col">
                 <AIKeyboardBar
                   currentText={currentDraftText}
                   onChangeText={setCurrentDraftText}
                   onSend={handleEnter}
-                  suggestedReplies={analysisData?.suggestedReplies || []}
-                  liveAdvice={analysisData?.advice || []}
+                  suggestedReplies={analysisData.suggestedReplies}
+                  suggestionTrio={analysisData.suggestionTrio}
+                  liveAdvice={analysisData.tacticalAdvice}
                   onSelectSuggestion={(reply) => setCurrentDraftText(reply)}
                   onRewrite={handleRewrite}
                   onRequestInstantAdvice={() => analyzeActiveScreen()}
@@ -486,6 +501,8 @@ export default function App() {
                   isOnDeviceMode={isOnDeviceMode}
                   onToggleOnDeviceMode={() => setIsOnDeviceMode(!isOnDeviceMode)}
                   localLatencyMs={localLatencyMs}
+                  onOpenTelemetryHUD={() => setIsTelemetryHUDOpen(!isTelemetryHUDOpen)}
+                  telemetryNotesCount={analysisData.telemetryNotes.length}
                 />
 
                 <SoftKeyboard
@@ -531,6 +548,27 @@ export default function App() {
             <KeyboardExtensionBridge />
           )}
 
+          {activeTab === 'studios' && (
+            <OmniStudiosView
+              onInsertToKeyboard={(text) => {
+                setCurrentDraftText(text);
+                setActiveTab('keyboard');
+              }}
+              currentScreenName={activeScreenName}
+            />
+          )}
+
+          {activeTab === 'sync' && (
+            <DesktopSyncBridge
+              onInsertToKeyboard={(text) => {
+                setCurrentDraftText(text);
+                setActiveTab('keyboard');
+              }}
+              onToggleDesktopOverlay={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
+              isDesktopOverlayActive={isDesktopOverlayActive}
+            />
+          )}
+
           {activeTab === 'setup' && (
             <MobileSetupGuide
               onTestKeyboard={() => setActiveTab('keyboard')}
@@ -539,78 +577,113 @@ export default function App() {
         </main>
 
         {/* 4. MOBILE BOTTOM TAB NAVIGATION BAR */}
-        <nav className="h-14 bg-slate-950 border-t border-slate-800/90 flex items-center justify-around px-1 shrink-0 z-30 pb-[env(safe-area-inset-bottom)]">
+        <nav className="h-14 bg-[#0B0B0C] border-t border-white/10 flex items-center justify-around px-1 shrink-0 z-30 pb-[env(safe-area-inset-bottom)]">
           <button
             onClick={() => setActiveTab('keyboard')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
               activeTab === 'keyboard'
-                ? 'text-cyan-400 font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <KeyboardIcon className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px]">Keyboard</span>
+            <span className="text-[9px] font-mono">Keys</span>
           </button>
 
           <button
             onClick={() => setActiveTab('vision')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all relative ${
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all relative ${
               activeTab === 'vision'
-                ? 'text-cyan-400 font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <Eye className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px]">Vision</span>
+            <span className="text-[9px] font-mono">Vision</span>
             {isStreaming && (
-              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-[#00f2fe] animate-ping" />
             )}
           </button>
 
           <button
             onClick={() => setActiveTab('workspace')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
               activeTab === 'workspace'
-                ? 'text-cyan-400 font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
-            title="Google Drive, Gmail, and Google Keep"
+            title="Google Drive, Gmail, Keep"
           >
             <FolderOpen className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px]">Workspace</span>
+            <span className="text-[9px] font-mono">Workspace</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sync')}
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
+              activeTab === 'sync'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+            title="Laptop & PC Sync (Dark Misfit Studios)"
+          >
+            <Laptop className="w-4 h-4 mb-0.5" />
+            <span className="text-[9px] font-mono">PC Sync</span>
           </button>
 
           <button
             onClick={() => setActiveTab('extension')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
               activeTab === 'extension'
-                ? 'text-cyan-400 font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
-            title="iOS & Android Keyboard Extension"
+            title="iOS & Android Extension Code"
           >
             <Code className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px]">Extension</span>
+            <span className="text-[9px] font-mono">Extension</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('studios')}
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
+              activeTab === 'studios'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 mb-0.5" />
+            <span className="text-[9px] font-mono">Orb & 3D</span>
           </button>
 
           <button
             onClick={() => setActiveTab('setup')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-12 py-1 rounded-xl transition-all ${
               activeTab === 'setup'
-                ? 'text-cyan-400 font-bold'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'text-[#00f2fe] font-bold drop-shadow-[0_0_8px_rgba(0,242,254,0.5)]'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <Smartphone className="w-4 h-4 mb-0.5" />
-            <span className="text-[9px]">Install</span>
+            <span className="text-[9px] font-mono">Install</span>
           </button>
         </nav>
 
         {/* 5. NATIVE MOBILE HOME INDICATOR BAR */}
-        <div className="w-full pb-1 pt-0.5 bg-slate-950 flex justify-center shrink-0">
-          <div className="w-28 h-1 rounded-full bg-slate-700/60" />
+        <div className="w-full pb-1 pt-0.5 bg-[#0B0B0C] flex justify-center shrink-0">
+          <div className="w-28 h-1 rounded-full bg-slate-800" />
         </div>
       </div>
+
+      {/* 6. SYSTEM-WIDE FLOATING COMPANION WIDGET (OMNI KEY • DARK MISFIT STUDIOS) */}
+      <DesktopFloatingWidget
+        isOpen={isDesktopOverlayActive}
+        onToggle={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
+        phoneDraftText={currentDraftText}
+        onSendToPhone={(text) => setCurrentDraftText(text)}
+        onSelectSuggestion={(text) => setCurrentDraftText(text)}
+        activeScreenName={activeScreenName}
+      />
     </div>
   );
 }
