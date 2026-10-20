@@ -16,7 +16,8 @@ import {
   Shield, 
   ArrowRight,
   GripHorizontal,
-  Monitor
+  Monitor,
+  Zap
 } from 'lucide-react';
 import { HoloOrb, OrbPhase } from './HoloOrb';
 
@@ -27,6 +28,9 @@ interface DesktopFloatingWidgetProps {
   onSendToPhone: (text: string) => void;
   onSelectSuggestion: (text: string) => void;
   activeScreenName: string;
+  isAutoMode?: boolean;
+  onToggleAutoMode?: () => void;
+  autoPilotTone?: 'rawHonest' | 'witty' | 'directAction';
 }
 
 export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
@@ -36,6 +40,9 @@ export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
   onSendToPhone,
   onSelectSuggestion,
   activeScreenName,
+  isAutoMode = false,
+  onToggleAutoMode,
+  autoPilotTone = 'directAction',
 }) => {
   const [isMinimizedPill, setIsMinimizedPill] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -341,10 +348,28 @@ export const DesktopFloatingWidget: React.FC<DesktopFloatingWidgetProps> = ({
             )}
           </div>
 
-          {/* Sync indicator with Phone */}
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Paired with Phone (Omni Key Mobile)</span>
+          <div className="flex items-center gap-2">
+            {/* Auto Mode toggle on desktop */}
+            {onToggleAutoMode && (
+              <button
+                onClick={onToggleAutoMode}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition ${
+                  isAutoMode
+                    ? 'bg-[#00f2fe]/20 text-[#00f2fe] border border-[#00f2fe] shadow-[0_0_12px_rgba(0,242,254,0.3)] animate-pulse'
+                    : 'bg-black text-slate-500 border border-white/10 hover:text-slate-300'
+                }`}
+                title="Toggle Autonomous Auto-Pilot Mode"
+              >
+                <Zap className="w-3 h-3" />
+                <span>{isAutoMode ? 'AUTO: ON' : 'AUTO: OFF'}</span>
+              </button>
+            )}
+
+            {/* Sync indicator with Phone */}
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Paired with Phone (Omni Key Mobile)</span>
+            </div>
           </div>
         </div>
 

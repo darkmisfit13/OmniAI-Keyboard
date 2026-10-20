@@ -17,7 +17,7 @@ import { HoloOrb } from './HoloOrb';
 
 export interface TelemetryNoteItem {
   id: string;
-  category: 'Entity' | 'Topic' | 'Emotion' | 'Commitment' | 'Risk';
+  category: 'Entity' | 'Topic' | 'Emotion' | 'Commitment' | 'Risk' | 'Auto-Pilot';
   label: string;
   detail: string;
   timestamp: string;
@@ -120,12 +120,13 @@ export const JarvisTelemetryHUD: React.FC<JarvisTelemetryHUDProps> = ({
 
           <div className="max-h-48 overflow-y-auto no-scrollbar space-y-1.5">
             {telemetryNotes.map((note) => {
-              const badgeColors = {
+              const badgeColors: Record<string, string> = {
                 Entity: 'bg-cyan-500/20 text-[#00f2fe] border-cyan-500/40',
                 Topic: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
                 Emotion: 'bg-purple-500/20 text-[#7f00ff] border-purple-500/40',
                 Commitment: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
                 Risk: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                'Auto-Pilot': 'bg-cyan-500/20 text-[#00f2fe] border-cyan-500/60 shadow-[0_0_8px_rgba(0,242,254,0.3)]',
               };
 
               return (

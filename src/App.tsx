@@ -12,7 +12,8 @@ import {
   Activity,
   Layers,
   Cpu,
-  Laptop
+  Laptop,
+  Zap
 } from 'lucide-react';
 import { HoloOrb, OrbPhase } from './components/HoloOrb';
 import { AIKeyboardBar } from './components/AIKeyboardBar';
@@ -35,6 +36,14 @@ import { User } from 'firebase/auth';
 export default function App() {
   const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'workspace' | 'extension' | 'studios' | 'sync' | 'setup'>('keyboard');
   const [isDesktopOverlayActive, setIsDesktopOverlayActive] = useState(false);
+
+  // Autonomous Auto Mode State
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [autoPilotTone, setAutoPilotTone] = useState<'rawHonest' | 'witty' | 'directAction'>('directAction');
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
+  const [autoDispatchTarget, setAutoDispatchTarget] = useState<string>('');
+  const [autoDispatchPreviewText, setAutoDispatchPreviewText] = useState<string>('');
+  const autoCountdownTimerRef = useRef<any>(null);
 
   // Active typing text
   const [currentDraftText, setCurrentDraftText] = useState<string>(PRESET_SCENARIOS[0].defaultDraft);
@@ -183,9 +192,11 @@ export default function App() {
       setAnalysisData(result);
       setLocalLatencyMs(result.telemetry.latencyMs);
       setOrbPhase('suggesting');
+      return result;
     } catch (err) {
       console.error('Cognition failed:', err);
       setOrbPhase('idle');
+      return null;
     } finally {
       setIsAnalyzing(false);
     }
@@ -289,7 +300,7 @@ export default function App() {
     setCurrentDraftText((prev) => prev + ' ');
   };
 
-  const handleEnter = (text?: string) => {
+  const handleEnter = useCallback((text?: string, isAutoPilot = false) => {
     const final = text || currentDraftText;
     if (!final.trim()) return;
 
@@ -297,6 +308,7 @@ export default function App() {
       sender: 'me',
       text: final,
       time: 'Just now',
+      isAutoPilot,
     });
     setCurrentDraftText('');
     setOrbPhase('suggesting');
@@ -304,7 +316,161 @@ export default function App() {
     setTimeout(() => {
       analyzeActiveScreen();
     }, 900);
-  };
+  }, [currentDraftText, currentScenario, analyzeActiveScreen]);
+
+  // Trigger autonomous auto-dispatch with countdown
+  const triggerAutoPilotDispatch = useCallback(
+    (target: string, incomingContext: string, customReply?: string) => {
+      const chosenReply =
+        customReply ||
+        analysisData.suggestionTrio[autoPilotTone] ||
+        analysisData.suggestedReplies[0] ||
+        'Locking in execution immediately.';
+
+      setAutoDispatchTarget(target);
+      setAutoDispatchPreviewText(chosenReply);
+      setOrbPhase('auto');
+
+      if (autoCountdownTimerRef.current) {
+        clearInterval(autoCountdownTimerRef.current);
+      }
+
+      let count = 3;
+      setAutoCountdown(count);
+
+      autoCountdownTimerRef.current = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          setAutoCountdown(count);
+        } else {
+          clearInterval(autoCountdownTimerRef.current);
+          setAutoCountdown(null);
+          // Autonomously answer!
+          handleEnter(chosenReply, true);
+
+          // Add audit note to Jarvis Telemetry
+          const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          setAnalysisData((prev) => ({
+            ...prev,
+            telemetryNotes: [
+              {
+                id: `auto_${Date.now()}`,
+                category: 'Auto-Pilot',
+                label: `Auto-Answered: ${target}`,
+                detail: `Autonomous dispatch (${autoPilotTone.toUpperCase()}): "${chosenReply}"`,
+                timestamp: nowStr,
+              },
+              ...prev.telemetryNotes,
+            ],
+          }));
+        }
+      }, 1000);
+    },
+    [autoPilotTone, analysisData, handleEnter]
+  );
+
+  const handleCancelAutoDispatch = useCallback(() => {
+    if (autoCountdownTimerRef.current) {
+      clearInterval(autoCountdownTimerRef.current);
+    }
+    setAutoCountdown(null);
+    setOrbPhase('idle');
+  }, []);
+
+  const handleInstantAutoDispatch = useCallback(() => {
+    if (autoCountdownTimerRef.current) {
+      clearInterval(autoCountdownTimerRef.current);
+    }
+    const replyToSend =
+      autoDispatchPreviewText ||
+      analysisData.suggestionTrio[autoPilotTone] ||
+      analysisData.suggestedReplies[0];
+    setAutoCountdown(null);
+    handleEnter(replyToSend, true);
+
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setAnalysisData((prev) => ({
+      ...prev,
+      telemetryNotes: [
+        {
+          id: `auto_${Date.now()}`,
+          category: 'Auto-Pilot',
+          label: `Instant Auto-Answer: ${autoDispatchTarget || 'Counterpart'}`,
+          detail: `Manual override dispatch (${autoPilotTone.toUpperCase()}): "${replyToSend}"`,
+          timestamp: nowStr,
+        },
+        ...prev.telemetryNotes,
+      ],
+    }));
+  }, [autoDispatchPreviewText, analysisData, autoPilotTone, autoDispatchTarget, handleEnter]);
+
+  // Toggle Auto Mode
+  const handleToggleAutoMode = useCallback(() => {
+    setIsAutoMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setOrbPhase('auto');
+        const lastMsg = currentScenario.messages[currentScenario.messages.length - 1];
+        if (lastMsg && lastMsg.sender === 'them') {
+          setTimeout(() => {
+            triggerAutoPilotDispatch(currentScenario.appHeader.title, lastMsg.text);
+          }, 400);
+        }
+      } else {
+        if (autoCountdownTimerRef.current) {
+          clearInterval(autoCountdownTimerRef.current);
+        }
+        setAutoCountdown(null);
+        setOrbPhase('idle');
+      }
+      return next;
+    });
+  }, [currentScenario, triggerAutoPilotDispatch]);
+
+  // Simulate new incoming counterpart message for testing Auto Mode
+  const handleSimulateIncomingMessage = useCallback(() => {
+    const counterpartReplies: Record<string, string[]> = {
+      work_slack: [
+        'Client VP is pinging me again. What is our fallback plan if staging isn’t stable by 11:00?',
+        'Can you confirm when the database migration script completes on staging?',
+      ],
+      dating_hinge: [
+        'Haha deal! Next question: what is your go-to midnight creative playlist when you are locked in the lab?',
+        'Are you more of an impulsive road trip person or meticulous planner?',
+      ],
+      client_dispute: [
+        'Can you confirm in writing that our payment gateway won’t incur any recurring penalty for this charge?',
+        'Thank you for looking into this. Please send the adjusted invoice as soon as finance approves.',
+      ],
+      terminal_bug: [
+        'Crash monitor ping: port 8080 reporting high connection drop rate. Check auth middleware overhead.',
+        'Core dump written to /var/log/crash.log. Session validation taking >400ms.',
+      ],
+    };
+
+    const options = counterpartReplies[currentScenario.id] || [
+      'Hey, got a quick second to sync on our next steps?',
+      'Just following up on your last update, let me know when ready.',
+    ];
+    const randomReply = options[Math.floor(Math.random() * options.length)];
+
+    currentScenario.messages.push({
+      sender: 'them',
+      text: randomReply,
+      time: 'Just now',
+    });
+
+    setOrbPhase('observing');
+
+    // Trigger analysis and auto-pilot if active
+    analyzeActiveScreen().then((res) => {
+      if (isAutoMode) {
+        const toneKey = autoPilotTone;
+        const candidate = res?.suggestionTrio?.[toneKey] || res?.suggestedReplies?.[0];
+        triggerAutoPilotDispatch(currentScenario.appHeader.title, randomReply, candidate);
+      }
+    });
+  }, [currentScenario, isAutoMode, autoPilotTone, analyzeActiveScreen, triggerAutoPilotDispatch]);
 
   const handleLoadIntoScreenSimulator = (title: string, body: string, sender: string) => {
     const customScenario: ScreenScenario = {
@@ -428,6 +594,20 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Quick Auto Mode Toggle */}
+            <button
+              onClick={handleToggleAutoMode}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition ${
+                isAutoMode
+                  ? 'bg-gradient-to-r from-[#00f2fe]/20 to-[#7f00ff]/30 border border-[#00f2fe] text-[#00f2fe] shadow-[0_0_12px_rgba(0,242,254,0.4)] animate-pulse'
+                  : 'bg-[#0B0B0C] border border-white/10 text-slate-400 hover:text-white'
+              }`}
+              title="Toggle Autonomous Auto-Pilot Mode (Omni Key answers for you)"
+            >
+              <Zap className={`w-3 h-3 ${isAutoMode ? 'text-[#00f2fe] animate-bounce' : 'text-slate-500'}`} />
+              <span>{isAutoMode ? 'AUTO: ON' : 'AUTO'}</span>
+            </button>
+
             {/* Quick PC Overlay Toggle */}
             <button
               onClick={() => setIsDesktopOverlayActive(!isDesktopOverlayActive)}
@@ -480,6 +660,8 @@ export default function App() {
                   isLiveScreenSharing={isStreaming}
                   onToggleLiveScreenSharing={handleToggleLiveScreenSharing}
                   currentDraftText={currentDraftText}
+                  onSimulateIncomingMessage={handleSimulateIncomingMessage}
+                  isAutoMode={isAutoMode}
                 />
               </div>
 
@@ -503,6 +685,15 @@ export default function App() {
                   localLatencyMs={localLatencyMs}
                   onOpenTelemetryHUD={() => setIsTelemetryHUDOpen(!isTelemetryHUDOpen)}
                   telemetryNotesCount={analysisData.telemetryNotes.length}
+                  isAutoMode={isAutoMode}
+                  onToggleAutoMode={handleToggleAutoMode}
+                  autoPilotTone={autoPilotTone}
+                  onChangeAutoPilotTone={setAutoPilotTone}
+                  autoCountdown={autoCountdown}
+                  onCancelAutoDispatch={handleCancelAutoDispatch}
+                  onInstantAutoDispatch={handleInstantAutoDispatch}
+                  autoDispatchTarget={autoDispatchTarget}
+                  autoDispatchPreviewText={autoDispatchPreviewText}
                 />
 
                 <SoftKeyboard
@@ -683,6 +874,9 @@ export default function App() {
         onSendToPhone={(text) => setCurrentDraftText(text)}
         onSelectSuggestion={(text) => setCurrentDraftText(text)}
         activeScreenName={activeScreenName}
+        isAutoMode={isAutoMode}
+        onToggleAutoMode={handleToggleAutoMode}
+        autoPilotTone={autoPilotTone}
       />
     </div>
   );

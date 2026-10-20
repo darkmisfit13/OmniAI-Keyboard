@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
-export type OrbPhase = 'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing';
+export type OrbPhase = 'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing' | 'auto';
 
 interface HoloOrbProps {
   phase?: OrbPhase;
@@ -258,7 +258,11 @@ export const HoloOrb: React.FC<HoloOrbProps> = ({
         let targetTurbulence = 0.18;
         let targetPulse = 1.2;
 
-        if (phase === 'analyzing') {
+        if (phase === 'auto') {
+          speedMultiplier = 3.2;
+          targetTurbulence = 0.65;
+          targetPulse = 4.2;
+        } else if (phase === 'analyzing') {
           speedMultiplier = 2.6;
           targetTurbulence = 0.48;
           targetPulse = 3.0;

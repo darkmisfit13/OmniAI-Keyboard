@@ -10,7 +10,8 @@ import {
   Video,
   ShieldAlert,
   Flame,
-  Activity
+  Activity,
+  Zap
 } from 'lucide-react';
 
 export interface ScreenScenario {
@@ -28,6 +29,7 @@ export interface ScreenScenario {
     sender: 'them' | 'me';
     text: string;
     time: string;
+    isAutoPilot?: boolean;
   }>;
   contextHint: string;
   defaultDraft: string;
@@ -129,6 +131,8 @@ interface SimulatedAppViewProps {
   isLiveScreenSharing: boolean;
   onToggleLiveScreenSharing: () => void;
   currentDraftText: string;
+  onSimulateIncomingMessage?: () => void;
+  isAutoMode?: boolean;
 }
 
 export const SimulatedAppView: React.FC<SimulatedAppViewProps> = ({
@@ -140,6 +144,8 @@ export const SimulatedAppView: React.FC<SimulatedAppViewProps> = ({
   isLiveScreenSharing,
   onToggleLiveScreenSharing,
   currentDraftText,
+  onSimulateIncomingMessage,
+  isAutoMode = false,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -179,6 +185,18 @@ export const SimulatedAppView: React.FC<SimulatedAppViewProps> = ({
             </button>
           );
         })}
+
+        {/* Test incoming message trigger for Auto-Mode testing */}
+        {onSimulateIncomingMessage && (
+          <button
+            onClick={onSimulateIncomingMessage}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold whitespace-nowrap bg-gradient-to-r from-[#00f2fe]/15 to-[#7f00ff]/20 text-[#00f2fe] border border-[#00f2fe]/40 hover:bg-[#00f2fe]/30 transition shadow-[0_0_12px_rgba(0,242,254,0.2)]"
+            title="Trigger an incoming message from the counterpart to see Omni Key calculate and answer for you"
+          >
+            <Zap className="w-3 h-3 text-[#00f2fe] animate-pulse" />
+            <span>+ Incoming Msg</span>
+          </button>
+        )}
 
         {/* Live screen share toggle button */}
         <button
@@ -289,8 +307,13 @@ export const SimulatedAppView: React.FC<SimulatedAppViewProps> = ({
                   >
                     {msg.text}
                   </div>
-                  <span className="text-[9px] font-mono text-slate-500 mt-0.5 px-1">
-                    {msg.time}
+                  <span className="text-[9px] font-mono text-slate-500 mt-0.5 px-1 flex items-center gap-1">
+                    {msg.isAutoPilot && (
+                      <span className="text-[#00f2fe] flex items-center gap-0.5 font-bold">
+                        <Zap className="w-2.5 h-2.5" /> AUTO-PILOT •
+                      </span>
+                    )}
+                    <span>{msg.time}</span>
                   </span>
                 </div>
               ))}

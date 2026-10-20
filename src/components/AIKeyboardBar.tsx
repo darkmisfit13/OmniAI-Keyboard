@@ -16,7 +16,8 @@ import {
   Database,
   Layers,
   ChevronRight,
-  Info
+  Info,
+  Zap
 } from 'lucide-react';
 
 interface SuggestionTrio {
@@ -43,6 +44,15 @@ interface AIKeyboardBarProps {
   localLatencyMs?: number;
   onOpenTelemetryHUD: () => void;
   telemetryNotesCount: number;
+  isAutoMode?: boolean;
+  onToggleAutoMode?: () => void;
+  autoPilotTone?: 'rawHonest' | 'witty' | 'directAction';
+  onChangeAutoPilotTone?: (tone: 'rawHonest' | 'witty' | 'directAction') => void;
+  autoCountdown?: number | null;
+  onCancelAutoDispatch?: () => void;
+  onInstantAutoDispatch?: () => void;
+  autoDispatchTarget?: string;
+  autoDispatchPreviewText?: string;
 }
 
 export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
@@ -63,6 +73,15 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   localLatencyMs = 6.8,
   onOpenTelemetryHUD,
   telemetryNotesCount = 3,
+  isAutoMode = false,
+  onToggleAutoMode,
+  autoPilotTone = 'directAction',
+  onChangeAutoPilotTone,
+  autoCountdown = null,
+  onCancelAutoDispatch,
+  onInstantAutoDispatch,
+  autoDispatchTarget = '',
+  autoDispatchPreviewText = '',
 }) => {
   const [copied, setCopied] = useState(false);
   const [showToneMenu, setShowToneMenu] = useState(false);
@@ -167,6 +186,22 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
             </span>
           </div>
 
+          {/* Autonomous Auto-Pilot Mode Toggle */}
+          {onToggleAutoMode && (
+            <button
+              onClick={onToggleAutoMode}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition shrink-0 ${
+                isAutoMode
+                  ? 'bg-gradient-to-r from-[#00f2fe]/20 to-[#7f00ff]/30 text-[#00f2fe] border border-[#00f2fe] shadow-[0_0_12px_rgba(0,242,254,0.4)] animate-pulse'
+                  : 'bg-black/90 text-slate-500 border border-white/10 hover:text-slate-300'
+              }`}
+              title="Toggle Autonomous Auto-Pilot Mode (Omni Key answers for you)"
+            >
+              <Zap className={`w-3 h-3 ${isAutoMode ? 'text-[#00f2fe] animate-bounce' : 'text-slate-500'}`} />
+              <span>{isAutoMode ? 'AUTO: ON' : 'AUTO: OFF'}</span>
+            </button>
+          )}
+
           {/* On-Device NPU Status Badge */}
           {onToggleOnDeviceMode && (
             <button
@@ -199,6 +234,84 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* AUTONOMOUS AUTO-DISPATCH ACTIVE BANNER */}
+      {isAutoMode && autoCountdown !== null && (
+        <div className="px-3 py-2 bg-gradient-to-r from-[#0B0B0C] via-[#05141c] to-[#0B0B0C] border-b border-[#00f2fe]/60 shadow-[0_0_25px_rgba(0,242,254,0.3)] animate-in slide-in-from-top-2 duration-150 flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00f2fe] animate-ping" />
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#00f2fe]">
+                <Zap className="w-3.5 h-3.5 text-[#00f2fe]" />
+                <span>AUTO-ANSWERING IN {autoCountdown}s...</span>
+              </div>
+              <span className="px-1.5 py-0.2 rounded text-[8px] font-mono bg-[#7f00ff]/20 text-[#c084fc] border border-[#7f00ff]/40 uppercase font-bold">
+                {autoPilotTone}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onInstantAutoDispatch}
+                className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#0575e6] text-black text-[10px] font-mono font-bold hover:brightness-110 active:scale-95 shadow-[0_0_12px_rgba(0,242,254,0.4)] transition"
+              >
+                Send Now ⚡
+              </button>
+              <button
+                onClick={onCancelAutoDispatch}
+                className="px-2 py-0.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/40 text-[10px] font-mono hover:bg-red-500/25 transition"
+              >
+                Override
+              </button>
+            </div>
+          </div>
+
+          {/* Countdown timer bar */}
+          <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5">
+            <div 
+              className="h-full bg-gradient-to-r from-[#00f2fe] via-[#7f00ff] to-[#0575e6] transition-all duration-1000 ease-linear rounded-full"
+              style={{ width: `${Math.max(10, ((autoCountdown || 1) / 3) * 100)}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] font-mono text-slate-200">
+            <span className="truncate italic pr-2">
+              "{autoDispatchPreviewText || currentText || 'Generating optimal response...'}"
+            </span>
+            {autoDispatchTarget && (
+              <span className="text-[9px] text-slate-400 shrink-0">
+                To: {autoDispatchTarget}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* AUTONOMOUS AUTO-PILOT COCKPIT STRIP (When Auto Mode is ON but idle) */}
+      {isAutoMode && autoCountdown === null && (
+        <div className="px-3 py-1.5 bg-[#05141c]/60 border-b border-[#00f2fe]/30 flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center gap-1.5 text-[10px] text-[#00f2fe]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-pulse" />
+            <span className="font-bold">AUTO-PILOT ACTIVE:</span>
+            <span className="text-slate-300">Omni Key will autonomously answer incoming messages.</span>
+          </div>
+
+          {onChangeAutoPilotTone && (
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] text-slate-500">Tone:</span>
+              <select
+                value={autoPilotTone}
+                onChange={(e) => onChangeAutoPilotTone(e.target.value as any)}
+                className="bg-black text-[10px] text-[#00f2fe] border border-white/10 rounded px-1.5 py-0.5 focus:outline-none font-mono"
+              >
+                <option value="directAction">Direct Action</option>
+                <option value="rawHonest">Raw & Honest</option>
+                <option value="witty">Witty & Magnetic</option>
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* TONE POPOVER / SELECTOR */}
       {showToneMenu && (
