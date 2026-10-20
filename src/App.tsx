@@ -13,7 +13,10 @@ import {
   Minimize2,
   Tv,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Cpu,
+  FolderOpen,
+  Code
 } from 'lucide-react';
 import { HoloOrb, OrbPhase } from './components/HoloOrb';
 import { AIKeyboardBar } from './components/AIKeyboardBar';
@@ -24,10 +27,15 @@ import { OmniStudiosView } from './components/OmniStudiosView';
 import { MobileSetupGuide } from './components/MobileSetupGuide';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { WorkspaceHub } from './components/WorkspaceHub';
+import { KeyboardExtensionBridge } from './components/KeyboardExtensionBridge';
+import { onDeviceAI } from './lib/onDeviceAI';
+import { auth, testFirestoreConnection } from './lib/firebase';
+import { User } from 'firebase/auth';
 
 export default function App() {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'studios' | 'setup'>('keyboard');
+  const [activeTab, setActiveTab] = useState<'keyboard' | 'vision' | 'workspace' | 'extension' | 'setup'>('keyboard');
 
   // Active typing text
   const [currentDraftText, setCurrentDraftText] = useState<string>(PRESET_SCENARIOS[0].defaultDraft);
@@ -46,29 +54,39 @@ export default function App() {
   // Phone frame simulation toggle for desktop screens
   const [phoneFrameMode, setPhoneFrameMode] = useState(true);
 
+  // On-Device AI Mode vs Cloud Mode
+  const [isOnDeviceMode, setIsOnDeviceMode] = useState(true);
+  const [localLatencyMs, setLocalLatencyMs] = useState(7.8);
+
+  // Current Firebase Auth User
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+
   // AI analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [orbPhase, setOrbPhase] = useState<OrbPhase>('idle');
   const [analysisData, setAnalysisData] = useState<any>({
     summary: 'Alex Rivera (VP Eng) is asking for an immediate ETA on the staging build #402 deployment.',
-    intent: 'Urgent accountability and deadline confirmation for client executive',
+    intent: 'Urgent status update needed to report to executive client stakeholders.',
     urgency: 'High',
     emotionalTone: 'Anxious / High-Pressure',
     advice: [
-      'State the exact ETA in the very first sentence.',
-      'Confirm the auth patch is validated without over-promising.',
-      'Reassure that you will notify the team the second it hits staging.'
+      'State your exact ETA in the very first sentence.',
+      'Confirm the auth fix is being regression-tested without making open-ended excuses.',
+      'Commit to pinging the channel immediately upon deployment.'
     ],
     suggestedReplies: [
-      'Patch is verified locally, running quick regression checks and pushing build in 15 mins.',
-      'On it—deploying the auth fix right now. Expect staging live by 11:00 AM sharp.',
-      'Testing the final token edge-case now; deploying to staging in under 20 minutes.'
+      'Patch is tested locally, wrapping up regression checks and pushing to staging in 15 mins.',
+      'On it—deploying the auth fix now. You will have staging live by 11:00 AM sharp.',
+      'Verified the token fix; deploying build to staging right now.'
     ],
   });
 
   // Clock in status bar
   const [currentTime, setCurrentTime] = useState('9:41');
   useEffect(() => {
+    testFirestoreConnection();
+    const unsub = auth.onAuthStateChanged((u) => setCurrentUser(u));
+
     const updateTime = () => {
       const d = new Date();
       const hours = d.getHours();
@@ -79,7 +97,10 @@ export default function App() {
     };
     updateTime();
     const interval = setInterval(updateTime, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      unsub();
+    };
   }, []);
 
   // Helper to capture a frame from the live video stream if active
@@ -107,14 +128,29 @@ export default function App() {
     }
   }, [stream]);
 
-  // Trigger Gemini Screen Analysis
+  // Trigger Screen Analysis (On-Device Local Model vs Cloud Vision)
   const analyzeActiveScreen = useCallback(async (customPrompt?: string) => {
     setIsAnalyzing(true);
     setOrbPhase('analyzing');
 
+    const screenContextText = `${currentScenario.name} - ${currentScenario.category} (${currentScenario.messages.map(m => m.text).join(' ')})`;
+
+    // ON-DEVICE MODE (Sub-15ms, Private, 100% Local Mobile Execution)
+    if (isOnDeviceMode) {
+      try {
+        const localResult = await onDeviceAI.analyzeScreenLocally(screenContextText, currentDraftText);
+        setAnalysisData(localResult);
+        setLocalLatencyMs(localResult.telemetry.latencyMs);
+        setOrbPhase('suggesting');
+      } finally {
+        setIsAnalyzing(false);
+      }
+      return;
+    }
+
+    // CLOUD MODE (Gemini 3.8 Flash Vision)
     try {
       let imageBase64: string | null = customScreenshot;
-
       if (!imageBase64 && stream) {
         imageBase64 = captureStreamFrame();
       }
@@ -129,7 +165,7 @@ export default function App() {
             ? 'Live Desktop/Phone Window'
             : customScreenshot
             ? 'Uploaded Mobile Screen'
-            : `${currentScenario.name} - ${currentScenario.category} (${currentScenario.messages.map(m => m.text).join(' ')})`,
+            : screenContextText,
           customPrompt,
         }),
       });
@@ -143,11 +179,14 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to analyze screen:', err);
-      setOrbPhase('idle');
+      // Fallback to local on-device processing
+      const localResult = await onDeviceAI.analyzeScreenLocally(screenContextText, currentDraftText);
+      setAnalysisData(localResult);
+      setOrbPhase('suggesting');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [customScreenshot, stream, captureStreamFrame, currentDraftText, isStreaming, currentScenario]);
+  }, [isOnDeviceMode, customScreenshot, stream, captureStreamFrame, currentDraftText, isStreaming, currentScenario]);
 
   // Handle switching scenario
   const handleSelectScenario = (scenario: ScreenScenario) => {
@@ -156,7 +195,7 @@ export default function App() {
     setOrbPhase('observing');
     setTimeout(() => {
       analyzeActiveScreen();
-    }, 300);
+    }, 200);
   };
 
   // Handle uploading custom screenshot
@@ -198,14 +237,12 @@ export default function App() {
         setIsStreaming(true);
         setOrbPhase('observing');
 
-        // Handle user stopping stream from browser chrome
         newStream.getVideoTracks()[0].onended = () => {
           setIsStreaming(false);
           setStream(null);
           setOrbPhase('idle');
         };
 
-        // Immediately analyze the new screen
         setTimeout(() => {
           analyzeActiveScreen();
         }, 1000);
@@ -216,11 +253,26 @@ export default function App() {
     }
   };
 
-  // Rewrite current text with target tone
+  // Rewrite current text with target tone (Local vs Cloud)
   const handleRewrite = async (style: string) => {
     if (!currentDraftText.trim()) return;
     setIsAnalyzing(true);
     setOrbPhase('typing');
+
+    if (isOnDeviceMode) {
+      try {
+        const { rewritten, telemetry } = await onDeviceAI.rewriteLocally(
+          currentDraftText,
+          style as any
+        );
+        setCurrentDraftText(rewritten);
+        setLocalLatencyMs(telemetry.latencyMs);
+        setOrbPhase('suggesting');
+      } finally {
+        setIsAnalyzing(false);
+      }
+      return;
+    }
 
     try {
       const res = await fetch('/api/keyboard-rewrite', {
@@ -272,10 +324,39 @@ export default function App() {
     setCurrentDraftText('');
     setOrbPhase('suggesting');
 
-    // Trigger AI response suggestion in 1 sec
     setTimeout(() => {
       analyzeActiveScreen();
-    }, 1200);
+    }, 1000);
+  };
+
+  // Inspect email or note in screen simulator
+  const handleLoadIntoScreenSimulator = (title: string, body: string, sender: string) => {
+    const customScenario: ScreenScenario = {
+      id: `screen_${Date.now()}`,
+      name: title,
+      category: 'Workspace',
+      icon: FolderOpen,
+      appHeader: {
+        title: sender,
+        subtitle: title,
+        avatar: '✉️',
+      },
+      messages: [
+        {
+          sender: 'them',
+          text: body,
+          time: 'Just now',
+        },
+      ],
+      contextHint: `Context from ${title}. Inspecting live dialogue in keyboard vision.`,
+      defaultDraft: '',
+    };
+    setCurrentScenario(customScenario);
+    setActiveTab('keyboard');
+    setOrbPhase('observing');
+    setTimeout(() => {
+      analyzeActiveScreen();
+    }, 300);
   };
 
   const activeScreenName = isStreaming
@@ -295,7 +376,7 @@ export default function App() {
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="font-semibold text-slate-300">Omni Keyboard AI</span>
           <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-950 border border-cyan-800 text-cyan-400">
-            PWA Mobile App
+            {isOnDeviceMode ? 'On-Device NPU' : 'Cloud Gemini'}
           </span>
         </div>
 
@@ -346,12 +427,26 @@ export default function App() {
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
               </div>
               <span className="text-[10px] text-cyan-400/90 font-mono block leading-none">
-                {isStreaming ? 'Screen Live ●' : 'Vision Armed'}
+                {isOnDeviceMode ? `⚡ On-Device (${localLatencyMs}ms)` : '☁️ Cloud Vision'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* On-Device Mode Toggle */}
+            <button
+              onClick={() => setIsOnDeviceMode(!isOnDeviceMode)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition border ${
+                isOnDeviceMode
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/20'
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+              }`}
+              title="Toggle On-Device Local Processing vs Cloud Gemini"
+            >
+              <Cpu className="w-3 h-3 text-emerald-400" />
+              <span>{isOnDeviceMode ? 'Local AI' : 'Cloud AI'}</span>
+            </button>
+
             <PWAInstallButton variant="compact" />
           </div>
         </header>
@@ -360,7 +455,7 @@ export default function App() {
         <main className="flex-1 overflow-hidden relative flex flex-col">
           {activeTab === 'keyboard' && (
             <div className="flex flex-col h-full justify-between overflow-hidden">
-              {/* Top part: The screen being observed */}
+              {/* Screen being observed */}
               <div className="flex-1 overflow-hidden p-2">
                 <SimulatedAppView
                   currentScenario={currentScenario}
@@ -374,7 +469,7 @@ export default function App() {
                 />
               </div>
 
-              {/* Bottom part: The Keyboard AI Bar + Soft Keyboard */}
+              {/* Keyboard AI Bar + Soft Keyboard */}
               <div className="shrink-0 flex flex-col">
                 <AIKeyboardBar
                   currentText={currentDraftText}
@@ -388,6 +483,9 @@ export default function App() {
                   isAnalyzing={isAnalyzing}
                   orbPhase={orbPhase}
                   screenName={activeScreenName}
+                  isOnDeviceMode={isOnDeviceMode}
+                  onToggleOnDeviceMode={() => setIsOnDeviceMode(!isOnDeviceMode)}
+                  localLatencyMs={localLatencyMs}
                 />
 
                 <SoftKeyboard
@@ -419,14 +517,18 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'studios' && (
-            <OmniStudiosView
+          {activeTab === 'workspace' && (
+            <WorkspaceHub
               onInsertToKeyboard={(text) => {
                 setCurrentDraftText(text);
                 setActiveTab('keyboard');
               }}
-              currentScreenName={activeScreenName}
+              onLoadIntoScreenSimulator={handleLoadIntoScreenSimulator}
             />
+          )}
+
+          {activeTab === 'extension' && (
+            <KeyboardExtensionBridge />
           )}
 
           {activeTab === 'setup' && (
@@ -437,56 +539,70 @@ export default function App() {
         </main>
 
         {/* 4. MOBILE BOTTOM TAB NAVIGATION BAR */}
-        <nav className="h-14 bg-slate-950 border-t border-slate-800/90 flex items-center justify-around px-2 shrink-0 z-30 pb-[env(safe-area-inset-bottom)]">
+        <nav className="h-14 bg-slate-950 border-t border-slate-800/90 flex items-center justify-around px-1 shrink-0 z-30 pb-[env(safe-area-inset-bottom)]">
           <button
             onClick={() => setActiveTab('keyboard')}
-            className={`flex flex-col items-center justify-center w-16 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
               activeTab === 'keyboard'
                 ? 'text-cyan-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <KeyboardIcon className="w-4 h-4 mb-0.5" />
-            <span className="text-[10px]">Keyboard</span>
+            <span className="text-[9px]">Keyboard</span>
           </button>
 
           <button
             onClick={() => setActiveTab('vision')}
-            className={`flex flex-col items-center justify-center w-16 py-1 rounded-xl transition-all relative ${
+            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all relative ${
               activeTab === 'vision'
                 ? 'text-cyan-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Eye className="w-4 h-4 mb-0.5" />
-            <span className="text-[10px]">Vision</span>
+            <span className="text-[9px]">Vision</span>
             {isStreaming && (
-              <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
             )}
           </button>
 
           <button
-            onClick={() => setActiveTab('studios')}
-            className={`flex flex-col items-center justify-center w-16 py-1 rounded-xl transition-all ${
-              activeTab === 'studios'
+            onClick={() => setActiveTab('workspace')}
+            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+              activeTab === 'workspace'
                 ? 'text-cyan-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
+            title="Google Drive, Gmail, and Google Keep"
           >
-            <Sparkles className="w-4 h-4 mb-0.5" />
-            <span className="text-[10px]">Studios</span>
+            <FolderOpen className="w-4 h-4 mb-0.5" />
+            <span className="text-[9px]">Workspace</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('extension')}
+            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
+              activeTab === 'extension'
+                ? 'text-cyan-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="iOS & Android Keyboard Extension"
+          >
+            <Code className="w-4 h-4 mb-0.5" />
+            <span className="text-[9px]">Extension</span>
           </button>
 
           <button
             onClick={() => setActiveTab('setup')}
-            className={`flex flex-col items-center justify-center w-16 py-1 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center w-14 py-1 rounded-xl transition-all ${
               activeTab === 'setup'
                 ? 'text-cyan-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Smartphone className="w-4 h-4 mb-0.5" />
-            <span className="text-[10px]">Install App</span>
+            <span className="text-[9px]">Install</span>
           </button>
         </nav>
 

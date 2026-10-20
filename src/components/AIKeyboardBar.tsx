@@ -30,6 +30,9 @@ interface AIKeyboardBarProps {
   isAnalyzing: boolean;
   orbPhase: OrbPhase;
   screenName: string;
+  isOnDeviceMode?: boolean;
+  onToggleOnDeviceMode?: () => void;
+  localLatencyMs?: number;
 }
 
 export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
@@ -44,6 +47,9 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
   isAnalyzing,
   orbPhase,
   screenName,
+  isOnDeviceMode = true,
+  onToggleOnDeviceMode,
+  localLatencyMs = 8.2,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showToneMenu, setShowToneMenu] = useState(false);
@@ -113,7 +119,7 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
           {/* In-the-moment live advice marquee / pill */}
           <div 
             onClick={() => setShowAdviceModal(true)}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-[11px] text-cyan-300 hover:bg-cyan-900/50 cursor-pointer truncate transition max-w-[85%]"
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-[11px] text-cyan-300 hover:bg-cyan-900/50 cursor-pointer truncate transition max-w-[65%]"
             title="Click for full AI coaching"
           >
             <Lightbulb className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
@@ -122,6 +128,21 @@ export const AIKeyboardBar: React.FC<AIKeyboardBarProps> = ({
             </span>
             <Info className="w-3 h-3 text-cyan-400/70 shrink-0 ml-0.5" />
           </div>
+
+          {/* On-Device AI Mode Badge */}
+          {onToggleOnDeviceMode && (
+            <button
+              onClick={onToggleOnDeviceMode}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold transition ${
+                isOnDeviceMode
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30'
+              }`}
+              title="Toggle On-Device Local Processing vs Cloud Gemini"
+            >
+              <span>{isOnDeviceMode ? `⚡ ${localLatencyMs}ms (NPU)` : '☁️ Cloud'}</span>
+            </button>
+          )}
         </div>
 
         {/* Tone menu toggle */}

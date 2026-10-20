@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "User profile with authentication and keyboard settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email"]
+    },
+    "savedKeyboardClip": {
+      "title": "Saved Keyboard Clip",
+      "description": "Tactical advice, quick snippets, and custom replies saved by the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "sourceApp": { "type": "string" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "content"]
+    },
+    "screenVisionLog": {
+      "title": "Screen Vision Log",
+      "description": "Captured screen perception and tactical AI advice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "summary": { "type": "string" },
+        "intent": { "type": "string" },
+        "advice": { "type": "array" },
+        "suggestedReplies": { "type": "array" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "summary"]
+    },
+    "workspaceNote": {
+      "title": "Workspace Note & Keep Sync",
+      "description": "Synced Google Keep notes, Gmail snippets, and Drive references",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "source": { "type": "string", "enum": ["keep", "gmail", "drive", "local"] },
+        "externalId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "userProfile",
+      "description": "User profile data accessible only by owner"
+    },
+    "/users/{userId}/clips/{clipId}": {
+      "schema": "savedKeyboardClip",
+      "description": "User saved keyboard snippets and responses"
+    },
+    "/users/{userId}/visionLogs/{logId}": {
+      "schema": "screenVisionLog",
+      "description": "User screen vision analysis history"
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "workspaceNote",
+      "description": "User Google Keep and Workspace synchronized notes"
+    }
+  }
+}

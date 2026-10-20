@@ -24,7 +24,8 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
   onInsertToKeyboard,
   currentScreenName,
 }) => {
-  const [activeStudio, setActiveStudio] = useState<'chat' | 'voice' | 'forge' | 'vault'>('chat');
+  const [activeStudio, setActiveStudio] = useState<'orb' | 'chat' | 'voice' | 'forge' | 'vault'>('orb');
+  const [orbDemoPhase, setOrbDemoPhase] = useState<'idle' | 'observing' | 'analyzing' | 'suggesting' | 'typing'>('analyzing');
 
   // OmniChat state
   const [chatInput, setChatInput] = useState('');
@@ -121,6 +122,7 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
   };
 
   const studios = [
+    { id: 'orb', label: 'AI Orb', icon: Sparkles },
     { id: 'chat', label: 'OmniChat', icon: Bot },
     { id: 'voice', label: 'OmniVoice', icon: Mic },
     { id: 'forge', label: 'OmniForge', icon: Code2 },
@@ -153,6 +155,72 @@ export const OmniStudiosView: React.FC<OmniStudiosViewProps> = ({
 
       {/* Main Studio Content Body */}
       <div className="flex-1 overflow-y-auto p-4">
+        {/* 0. 3D AI ORB CONSCIOUSNESS DECK */}
+        {activeStudio === 'orb' && (
+          <div className="flex flex-col items-center justify-between h-full space-y-4 animate-in fade-in">
+            {/* Top info */}
+            <div className="w-full text-center space-y-1">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#00f2fe] flex items-center justify-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#00f2fe]" />
+                Three.js Plasma Neural Consciousness
+              </span>
+              <h2 className="text-sm font-bold text-white">The Omni AI Orb</h2>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                Move your finger or pointer to distort the plasma ribbons. Watch the energy glow as it processes thoughts.
+              </p>
+            </div>
+
+            {/* 3D Hero Orb on pure black background with purplish blue body and neon blue highlights */}
+            <div className="relative flex items-center justify-center p-6 my-2 rounded-3xl bg-black border border-slate-800 shadow-[0_0_50px_rgba(99,102,241,0.25)]">
+              <HoloOrb phase={orbDemoPhase} size="hero" showStatusLabel />
+            </div>
+
+            {/* Interactive Thinking State Controller */}
+            <div className="w-full space-y-2 pt-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block text-center">
+                Simulate AI Thinking States:
+              </span>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                {[
+                  { id: 'idle', label: 'Idle' },
+                  { id: 'observing', label: 'Observing' },
+                  { id: 'analyzing', label: 'Thinking' },
+                  { id: 'suggesting', label: 'Suggesting' },
+                  { id: 'typing', label: 'Typing' },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setOrbDemoPhase(st.id as any)}
+                    className={`py-2 px-1 rounded-xl text-xs font-semibold transition text-center ${
+                      orbDemoPhase === st.id
+                        ? 'bg-[#00f2fe]/20 text-[#00f2fe] border border-[#00f2fe]/50 shadow-md shadow-[#00f2fe]/20'
+                        : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Palette Palette Legend */}
+            <div className="w-full p-3 rounded-2xl bg-black/80 border border-slate-800 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-black border border-slate-700 shadow-inner" title="Background Black" />
+                <span className="text-[11px] text-slate-300">Background: Black</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-[#6366f1] shadow-sm shadow-[#6366f1]/50" title="Purplish Blue" />
+                <span className="text-[11px] text-slate-300">Plasma: Purplish Blue</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-[#00f2fe] shadow-sm shadow-[#00f2fe]/50" title="Light Neon Blue" />
+                <span className="text-[11px] text-slate-300">Highlight: Neon Blue</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 1. OMNICHAT */}
         {activeStudio === 'chat' && (
           <div className="flex flex-col h-full space-y-3">
